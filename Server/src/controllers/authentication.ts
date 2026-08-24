@@ -102,7 +102,8 @@ export async function login(req: Request, res: Response) {
 
         const token = jwt.sign(
             {
-                id: user.id
+                userId: user.id,
+                email:user.email
             },
             JWT_SECRET,
             {
