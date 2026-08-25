@@ -1,28 +1,26 @@
 import "dotenv/config";
 import express from "express";
 import cors from "cors";
-import prisma from "./lib/prisma.js";
+import userRouter from "./Router/userRouter.js";
 const app = express();
 app.use(cors());
 app.use(express.json());
 app.get("/", async (req, res) => {
     try {
-        const user = await prisma.user.findMany();
         res.json({
             message: "backend and prisma running",
             success: true,
-            user
         });
     }
     catch (err) {
-        console.error("Database query error:", err);
+        console.error(err);
         res.status(500).json({
-            message: "Database query failed",
-            error: err?.message || err,
+            message: "server falied",
             success: false
         });
     }
 });
+app.use("/api/users", userRouter);
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
     console.log(`server start on ${PORT}`);

@@ -7,12 +7,159 @@ datasource db {
   provider = "mysql"
 }
 
+
+// ==================== USER ====================
+
 model User {
-  id        Int      @id @default(autoincrement())
-  name      String
-  email     String   @unique
-  password  String
-  balance   Decimal  @default(100000.00)
+  id       String  @id @default(uuid())
+  name     String
+  email    String  @unique
+  password String
+
+  // Available cash balance in INR
+  balance  Decimal @default(0)
+
+  holdings     Holding[]
+  orders       Order[]
+  transactions Transaction[]
+  watchlists   Watchlist[]
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+
+// ==================== ASSET ====================
+
+enum AssetType {
+  STOCK
+  FOREX
+}
+
+model Asset {
+  id           String    @id @default(uuid())
+  symbol       String    @unique
+  name         String
+  type         AssetType
+
+  // Current market price in INR
+  currentPrice Decimal
+
+  exchange String?
+  sector   String?
+
+  holdings     Holding[]
+  orders       Order[]
+  transactions Transaction[]
+  watchlists   Watchlist[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([type])
+}
+
+
+// ==================== HOLDING ====================
+
+model Holding {
+  id        String  @id @default(uuid())
+  quantity  Decimal @default(0)
+  avgPrice  Decimal @default(0)
+
+  userId  String
+  assetId String
+
+  user  User  @relation(fields: [userId], references: [id])
+  asset Asset @relation(fields: [assetId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // One holding per user per asset
+  @@unique([userId, assetId])
+}
+
+
+// ==================== ORDER ====================
+
+enum OrderSide {
+  BUY
+  SELL
+}
+
+enum OrderStatus {
+  COMPLETED
+  REJECTED
+}
+
+model Order {
+  id            String      @id @default(uuid())
+  side          OrderSide
+  status        OrderStatus
+
+  quantity      Decimal
+  executedPrice Decimal
+  total         Decimal
+
+  userId  String
+  assetId String
+
+  user  User  @relation(fields: [userId], references: [id])
+  asset Asset @relation(fields: [assetId], references: [id])
+
+  transactions Transaction[]
+
+  createdAt DateTime @default(now())
+
+  @@index([userId, createdAt])
+  @@index([assetId, createdAt])
+}
+
+
+// ==================== TRANSACTION ====================
+
+enum TransactionType {
+  BUY
+  SELL
+}
+
+model Transaction {
+  id       String          @id @default(uuid())
+  type     TransactionType
+
+  quantity Decimal
+  price    Decimal
+  total    Decimal
+
+  userId  String
+  assetId String
+  orderId String
+
+  user  User  @relation(fields: [userId], references: [id])
+  asset Asset @relation(fields: [assetId], references: [id])
+  order Order @relation(fields: [orderId], references: [id])
+
+  createdAt DateTime @default(now())
+
+  @@index([userId, createdAt])
+  @@index([assetId, createdAt])
+}
+
+
+// ==================== WATCHLIST ====================
+
+model Watchlist {
+  id String @id @default(uuid())
+
+  userId  String
+  assetId String
+
+  user  User  @relation(fields: [userId], references: [id])
+  asset Asset @relation(fields: [assetId], references: [id])
+
+  createdAt DateTime @default(now())
+
+  // Prevent duplicate watchlist entries
+  @@unique([userId, assetId])
 }
