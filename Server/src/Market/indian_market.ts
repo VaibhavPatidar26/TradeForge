@@ -1,5 +1,6 @@
 import UpstoxClient from "upstox-js-sdk";
 import "dotenv/config";
+import redis, { setPrice } from "../redis/client.js";
 
 const token = process.env.UPSTOX_TOKEN;
 
@@ -26,12 +27,21 @@ streamer.on("open", () => {
 
     console.log("Subscribed to:", instruments);
 });
-
-streamer.on("message", (data: Buffer) => {
+streamer.on("message", async (data: Buffer) => {
     try {
         const message = data.toString("utf-8");
+        const parsedMessage = JSON.parse(message);
 
-        console.log("RAW:", message);
+        if (!parsedMessage.feeds) return;
+
+        for (const [instrumentKey, feed] of Object.entries(parsedMessage.feeds)) {
+            const price = (feed as any).ltpc?.ltp;
+
+            if (price !== undefined) {
+                await setPrice(instrumentKey, price);
+            }
+        }
+
     } catch (error) {
         console.error("Failed to process market data:", error);
     }
@@ -45,4 +55,9 @@ streamer.on("close", () => {
     console.log("Upstox WebSocket closed");
 });
 
-streamer.connect();
+async function connect() {
+    await redis.connect();
+
+    streamer.connect();
+}
+connect();

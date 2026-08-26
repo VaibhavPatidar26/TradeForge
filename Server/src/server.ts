@@ -3,8 +3,14 @@ import express, { Request, Response } from "express";
 import cors from "cors";
 import prisma from "./lib/prisma.js";
 import userRouter from "./Router/userRouter.js";
-
+import { WebSocketServer } from "ws";
 const app = express();
+const wss = new WebSocketServer({ port: 8080 });
+
+wss.on("connection", (ws) => {
+    console.log("client connected");
+    ws.send("welcome to websocket server")
+});
 
 app.use(cors());
 app.use(express.json());
@@ -15,7 +21,7 @@ app.get("/", async (req: Request, res: Response) => {
         res.json({
             message: "backend and prisma running",
             success: true,
-          
+
         });
     } catch (err: any) {
         console.error(err);
@@ -25,7 +31,7 @@ app.get("/", async (req: Request, res: Response) => {
         });
     }
 });
-app.use("/api/users",userRouter);
+app.use("/api/users", userRouter);
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
     console.log(`server start on ${PORT}`);
