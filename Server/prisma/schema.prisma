@@ -17,7 +17,7 @@ model User {
   password String
 
   // Available cash balance in INR
-  balance  Decimal @default(0)
+  balance  Decimal @default(100000.00)
 
   holdings     Holding[]
   orders       Order[]

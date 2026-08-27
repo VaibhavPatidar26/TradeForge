@@ -1,6 +1,7 @@
 import UpstoxClient from "upstox-js-sdk";
 import "dotenv/config";
 import redis, { setPrice } from "../redis/client.js";
+import { broadcastPrice } from "../websockets/connection.js";
 
 const token = process.env.UPSTOX_TOKEN;
 
@@ -39,6 +40,7 @@ streamer.on("message", async (data: Buffer) => {
 
             if (price !== undefined) {
                 await setPrice(instrumentKey, price);
+                broadcastPrice(instrumentKey, price);
             }
         }
 
