@@ -3,7 +3,7 @@ import jwt from "jsonwebtoken";
 import bcrypt from "bcrypt";
 import prisma from "../lib/prisma.js";
 
-const JWT_SECRET:string = process.env.JWT_SECRET || " ";
+const JWT_SECRET: string = process.env.JWT_SECRET || " ";
 
 if (!JWT_SECRET) {
     throw new Error("JWT_SECRET is not defined in .env");
@@ -40,13 +40,14 @@ export async function register(req: Request, res: Response) {
                 name,
                 email,
                 password: hashedPassword
+
             }
         });
 
-         const token = jwt.sign(
+        const token = jwt.sign(
             {
                 userId: user.id,
-                email:user.email
+                email: user.email
             },
             JWT_SECRET,
             {
@@ -63,7 +64,7 @@ export async function register(req: Request, res: Response) {
                 email: user.email,
                 balance: user.balance
             },
-            token:token
+            token: token
         });
 
     } catch (error: any) {
@@ -115,7 +116,7 @@ export async function login(req: Request, res: Response) {
         const token = jwt.sign(
             {
                 userId: user.id,
-                email:user.email
+                email: user.email
             },
             JWT_SECRET,
             {

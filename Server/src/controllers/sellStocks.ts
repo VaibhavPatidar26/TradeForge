@@ -48,6 +48,9 @@ async function sellStock(req: Request, res: Response) {
             });
         }
 
+
+        // 
+
         const price = Number(currentPrice);
 
         if (!Number.isFinite(price) || price <= 0) {
