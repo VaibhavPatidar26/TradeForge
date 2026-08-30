@@ -1,9 +1,42 @@
 
 import { ArrowLeft, Eye, EyeOff, Lock, Mail } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { LoginApi } from "../api/auth";
+import { useAuthStore } from "../store/authStore";
+import { useNavigate } from "react-router-dom";
 
 export default function Login() {
+    const [Email,setEmail] = useState<string>("");
+    const [Password,setPassword] = useState<string>("");
     const [showPassword, setShowPassword] = useState(false);
+
+    const {login} = useAuthStore();
+    const navigate = useNavigate();
+
+    useEffect(() => {
+        const token = useAuthStore.getState().token;
+        if (token) {
+            navigate("/dashboard");
+        }
+    }, [navigate]);
+
+    const handleLogin = async (e: React.FormEvent) => {
+        e.preventDefault();
+        try {
+            const data = await LoginApi(Email,Password);
+            if (data.success) {
+
+                login(data.token, data.user._id);
+                localStorage.setItem("token",data.token);
+
+                navigate("/dashboard");
+            } else {
+                alert(data.message);
+            }
+        } catch (error) {
+            console.log(error);
+        }
+    };
 
     return (
         <div className="min-h-screen bg-[#0a0a0a] text-white">
@@ -60,7 +93,9 @@ export default function Login() {
                     {/* Login Card */}
                     <div className="rounded-xl border border-zinc-800 bg-[#111111] p-5 shadow-2xl shadow-black/20 sm:p-7">
 
-                        <form className="space-y-5">
+                        <form className="space-y-5"
+                        onSubmit={handleLogin}
+                        >
 
                             {/* Email */}
                             <div>
@@ -80,6 +115,10 @@ export default function Login() {
                                     <input
                                         id="email"
                                         type="email"
+                                        value={Email}
+                                        onChange={(e)=>{
+                                            setEmail(e.target.value);
+                                        }}
                                         placeholder="you@example.com"
                                         className="h-11 w-full rounded-md border border-zinc-800 bg-[#0c0c0c] pl-10 pr-3 text-sm text-white outline-none transition placeholder:text-zinc-600 focus:border-emerald-500/60 focus:ring-1 focus:ring-emerald-500/20"
                                     />
@@ -112,6 +151,10 @@ export default function Login() {
 
                                     <input
                                         id="password"
+                                        value = {Password}
+                                        onChange={(e)=>{
+                                            setPassword(e.target.value);
+                                        }}
                                         type={showPassword ? "text" : "password"}
                                         placeholder="Enter your password"
                                         className="h-11 w-full rounded-md border border-zinc-800 bg-[#0c0c0c] pl-10 pr-11 text-sm text-white outline-none transition placeholder:text-zinc-600 focus:border-emerald-500/60 focus:ring-1 focus:ring-emerald-500/20"
@@ -157,6 +200,7 @@ export default function Login() {
                             {/* Login */}
                             <button
                                 type="submit"
+                                // onClick={handleLogin}
                                 className="flex h-11 w-full items-center justify-center rounded-md bg-emerald-500 text-sm font-semibold text-black transition hover:bg-emerald-400"
                             >
                                 Sign in
@@ -188,7 +232,9 @@ export default function Login() {
                         Don't have an account?{" "}
                         <button
                             type="button"
-                            className="font-medium text-emerald-400 transition hover:text-emerald-300"
+                            onClick={()=>{navigate("/signup")}}
+                            
+                            className="font-medium text-emerald-400 transition hover:text-emerald-300 hover:cursor-pointer"
                         >
                             Create one
                         </button>

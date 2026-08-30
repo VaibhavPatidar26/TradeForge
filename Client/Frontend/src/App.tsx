@@ -4,24 +4,26 @@ import Navbar from './components/layout/Navbar'
 import Landing from './pages/Landing';
 import { Route, Routes } from 'react-router'
 import Login from './pages/Login';
-import SignUp from './pages/SignUP';
+import SignUp from './pages/SignUp';
+import Dashboard from './pages/Dashboard';
+import MainLayout from './components/layout/MainLayout';
+
+
 function App() {
 
-    return (
-        <>
-            <div className="h-screen w-full">
-                {/* <Navbar /> */}
-                <Routes>
-                    <Route path="/" element={<Landing />} />
-                    <Route path="/Login" element={<Login />} />
-                    <Route path="/SignUp" element={<SignUp />} />
+   return (
+    <Routes>
+     //no navbar
+      <Route path="/login" element={<Login />} />
+      <Route path="/signup" element={<SignUp />} />
 
-                </Routes>
-            </div>
-
-
-
-        </>
+     //navbar
+      <Route element={<MainLayout />}>
+        <Route path="/" element={<Landing />} />
+        <Route path="/dashboard" element={<Dashboard />} />
+      
+      </Route>
+    </Routes>
     )
 }
 
