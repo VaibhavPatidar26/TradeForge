@@ -5,9 +5,15 @@ import { useAuthStore } from "../../store/authStore";
 
 export default function Navbar() {
     const token = useAuthStore((state) => state.token);
+     const logout = useAuthStore(function(state){
+           return state.logout
+        })
     const [menuOpen, setMenuOpen] = useState(false);
     const navigate = useNavigate();
-
+    const [profileClicked,setProfileClicked] = useState(false);
+    function LogoutHandler(){
+        logout();
+    }
     // ---------------------------------------------------------------------------
     // AUTHENTICATED NAVBAR
     // ---------------------------------------------------------------------------
@@ -44,7 +50,7 @@ export default function Navbar() {
                     </div>
 
                     {/* Right section */}
-                    <div className="flex shrink-0 items-center gap-3 sm:gap-5">
+                    <div className="relative flex shrink-0 items-center gap-3 sm:gap-5">
                         {/* Market Status */}
                         <div className="hidden items-center gap-2 text-xs text-zinc-400 lg:flex">
                             <span className="relative flex h-2 w-2">
@@ -62,6 +68,7 @@ export default function Navbar() {
 
                         {/* Notifications */}
                         <button
+                            
                             type="button"
                             aria-label="Notifications"
                             className="relative rounded-md text-zinc-400 transition-colors hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/60 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0f0f0f]"
@@ -72,6 +79,9 @@ export default function Navbar() {
 
                         {/* Profile */}
                         <button
+                            onClick={()=>{
+                                setProfileClicked((prev)=>!prev);
+                            }}
                             type="button"
                             aria-label="Profile menu"
                             className="flex items-center gap-1.5 rounded-full py-1 pl-1 pr-2 transition-colors hover:bg-zinc-800/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/60 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0f0f0f]"
@@ -80,7 +90,30 @@ export default function Navbar() {
                                 <User size={15} />
                             </span>
                             <ChevronDown size={14} className="hidden text-zinc-500 sm:block" />
+
                         </button>
+                        {profileClicked ? (
+    <div className="absolute right-0 top-full z-50 mt-2 w-48 rounded-xl border border-[#252b33] bg-[#11161c] shadow-2xl shadow-black/60 overflow-hidden">
+
+        <div className="px-4 py-3 border-b border-[#252b33]">
+            <p className="text-sm font-medium text-gray-200">
+                Account
+            </p>
+
+            <p className="text-xs text-gray-500 mt-1">
+                Manage your account
+            </p>
+        </div>
+
+        <button
+            onClick={LogoutHandler}
+            className="w-full px-4 py-3 text-left text-sm text-gray-400 hover:bg-[#1a2028] hover:text-red-400 transition-colors"
+        >
+            Logout
+        </button>
+
+    </div>
+) : null}
                     </div>
                 </div>
             </nav>

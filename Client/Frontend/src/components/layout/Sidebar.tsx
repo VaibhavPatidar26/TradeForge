@@ -6,9 +6,9 @@ import MainContent from "../SideContent/MainContent";
 
 function SidePanel() {
   return (
-    // Added overflow-hidden to lock outer boundaries
-    <div className="flex flex-col h-full w-70 bg-[#0b0e11] text-white border-r border-[#1f242b] overflow-hidden">
-      <div className="p-3 pb-0 shrink-0">
+    // overflow-visible on the outer container so the search dropdown can escape
+    <div className="flex flex-col h-full w-70 bg-[#0b0e11] text-white border-r border-[#1f242b]">
+      <div className="p-3 pb-0 shrink-0 relative">
         <MarketTicker />
         <div className="mt-4">
           <SearchBar />
@@ -24,5 +24,6 @@ function SidePanel() {
     </div>
   );
 }
+
 
 export default SidePanel;

@@ -1,6 +1,7 @@
-import React from "react";
+// import React from "react";
 import { LucideSearch } from "lucide-react";
-import { useSidebarSearchStore } from "../../store/SideBarStore";
+// import { useSidebarSearchStore } from "../../store/SideBarStore";
+import FloatingWindow from "../ui/floatingWindow";
 import {useState,useEffect} from "react"
 import axios from "axios";
 import { useAuthStore } from "../../store/authStore";
@@ -22,13 +23,17 @@ const [availableStocks,SetavailableStocks] = useState<Array<string>>([]);
 // logoutfunc();
 
 useEffect(function(){
+  if(searchStockName.trim() === ""){
+    SetavailableStocks([]);
+    return;
+  }
   const timer = setTimeout(function() {
     async function SearchStock(name:string){
      const response = await axios.get(`${BACKEND_URL}api/search/searchStock?stockName=${name}`,{headers:{
       Authorization : `Bearer ${accesstoken}`
      }
      })
-     SetavailableStocks(response.data.availableStocks);
+     SetavailableStocks(response.data.availableStocks||[]);
     
    
    }
@@ -63,6 +68,8 @@ console.log(availableStocks);
         size={16}
         className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500"
       />
+
+      <FloatingWindow Stocks={availableStocks}></FloatingWindow>
     </div>
   );
-}
+}
