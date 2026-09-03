@@ -30,6 +30,7 @@ app.get("/", async (req: Request, res: Response) => {
 app.use("/api/users", userRouter);
 app.use("/api/orders", orderRouter);
 const PORT = process.env.PORT || 3000;
+
 await redis.connect().then(() => {
     console.log("connected on redis");
 });

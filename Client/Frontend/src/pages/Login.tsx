@@ -6,11 +6,12 @@ import { useAuthStore } from "../store/authStore";
 import { useNavigate } from "react-router-dom";
 
 export default function Login() {
-    const [Email,setEmail] = useState<string>("");
-    const [Password,setPassword] = useState<string>("");
+    const [Email, setEmail] = useState<string>("");
+    const [Password, setPassword] = useState<string>("");
     const [showPassword, setShowPassword] = useState(false);
 
-    const {login} = useAuthStore();
+    const [errorMsg, setErrorMsg] = useState<string>("");
+    const { login } = useAuthStore();
     const navigate = useNavigate();
 
     useEffect(() => {
@@ -22,19 +23,21 @@ export default function Login() {
 
     const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault();
+        setErrorMsg("");
         try {
-            const data = await LoginApi(Email,Password);
+            const data = await LoginApi(Email, Password);
             if (data.success) {
-
-                login(data.token, data.user._id);
-                localStorage.setItem("token",data.token);
-
+                login(data.token, data.refreshToken, data.user.id);
+                localStorage.setItem("token", data.token);
                 navigate("/dashboard");
             } else {
-                alert(data.message);
+                setErrorMsg(data.message || "Login failed");
             }
-        } catch (error) {
-            console.log(error);
+        } catch (error: any) {
+            const msg =
+                error?.response?.data?.message ||
+                "Invalid email or password";
+            setErrorMsg(msg);
         }
     };
 
@@ -74,6 +77,10 @@ export default function Login() {
                     <button
                         type="button"
                         className="mb-8 flex items-center gap-2 text-sm text-zinc-500 transition hover:text-white"
+                        onClick={() => {
+                            navigate("/");
+                            console.log("clicked");
+                        }}
                     >
                         <ArrowLeft size={16} />
                         Back to home
@@ -94,7 +101,7 @@ export default function Login() {
                     <div className="rounded-xl border border-zinc-800 bg-[#111111] p-5 shadow-2xl shadow-black/20 sm:p-7">
 
                         <form className="space-y-5"
-                        onSubmit={handleLogin}
+                            onSubmit={handleLogin}
                         >
 
                             {/* Email */}
@@ -116,7 +123,7 @@ export default function Login() {
                                         id="email"
                                         type="email"
                                         value={Email}
-                                        onChange={(e)=>{
+                                        onChange={(e) => {
                                             setEmail(e.target.value);
                                         }}
                                         placeholder="you@example.com"
@@ -151,8 +158,8 @@ export default function Login() {
 
                                     <input
                                         id="password"
-                                        value = {Password}
-                                        onChange={(e)=>{
+                                        value={Password}
+                                        onChange={(e) => {
                                             setPassword(e.target.value);
                                         }}
                                         type={showPassword ? "text" : "password"}
@@ -197,6 +204,13 @@ export default function Login() {
                                 </label>
                             </div>
 
+                            {/* Error message */}
+                            {errorMsg && (
+                                <p className="text-sm text-red-400 text-center -mt-1">
+                                    {errorMsg}
+                                </p>
+                            )}
+
                             {/* Login */}
                             <button
                                 type="submit"
@@ -232,8 +246,8 @@ export default function Login() {
                         Don't have an account?{" "}
                         <button
                             type="button"
-                            onClick={()=>{navigate("/signup")}}
-                            
+                            onClick={() => { navigate("/signup") }}
+
                             className="font-medium text-emerald-400 transition hover:text-emerald-300 hover:cursor-pointer"
                         >
                             Create one

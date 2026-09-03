@@ -54,10 +54,11 @@ const Signup = () => {
       );
 
       const token = data.token; 
+      const refreshToken = data.refreshToken;
       const userId = data.userId || data.user?._id || data.user?.id;
 
       if (token) {
-        loginStore(token, userId);
+        loginStore(token, refreshToken, userId);
         navigate("/"); 
       } else {
         navigate("/login");

@@ -19,6 +19,8 @@ model User {
   // Available cash balance in INR
   balance  Decimal @default(100000.00)
 
+  refreshToken String? @db.Text
+
   holdings     Holding[]
   orders       Order[]
   transactions Transaction[]
@@ -27,6 +29,8 @@ model User {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
+
+
 
 
 // ==================== ASSET ====================
