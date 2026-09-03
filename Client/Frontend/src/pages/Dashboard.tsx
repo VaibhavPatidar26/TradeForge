@@ -29,16 +29,24 @@ export default function Dashboard() {
     }
   }, [token, navigate]);
 
-  return (
-   
-         <>
-         <div>
-          <SidePanel></SidePanel>
-         </div>
-         </>
-
+ return (
+    <div className="flex flex-col h-[90.5vh] w-full overflow-hidden bg-[#0b0e11]">
       
-    
-  
-  )
+      {/* 1. Your Top Navigation Bar (TradeForge, Search, Balance, etc.) goes here */}
+      {/* <TopNavigationBar /> */}
+
+      {/* 2. The main workspace takes the remaining vertical space */}
+      <div className="flex flex-1 overflow-hidden">
+        
+        {/* Sidebar locked to the left */}
+        <SidePanel />
+        
+        {/* Main Charting/Trading Interface */}
+        <div className="flex-1 overflow-y-auto p-4 text-white">
+          {/* Dashboard content */}
+        </div>
+        
+      </div>
+    </div>
+  );
 }

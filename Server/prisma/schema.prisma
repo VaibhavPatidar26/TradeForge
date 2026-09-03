@@ -30,7 +30,17 @@ model User {
   updatedAt DateTime @updatedAt
 }
 
+model Stocks{
+ segment         String
+name            String
+exchange        String
+instrument_type String
+instrument_key  String @id
+trading_symbol  String
 
+
+  @@index([name,instrument_key])
+}
 
 
 // ==================== ASSET ====================
