@@ -7,6 +7,7 @@ import { WebSocketServer } from "ws";
 import { orderRouter } from "./Router/orderRouter.js";
 import redis from "./redis/client.js";
 import findRouter from "./Router/findRouter.js";
+import createRouter from "./Router/createRouter.js";
 const app = express();
 
 app.use(cors());
@@ -31,6 +32,8 @@ app.get("/", async (req: Request, res: Response) => {
 app.use("/api/users", userRouter);
 app.use("/api/orders", orderRouter);
 app.use("/api/search",findRouter);
+// app.use("/api/watchlist",findRouter);
+app.use('/api/watchlist',createRouter);
 const PORT = process.env.PORT || 3000;
 
 await redis.connect().then(() => {

@@ -1,2 +1,0 @@
--- AlterTable
-ALTER TABLE `user` MODIFY `balance` DECIMAL(65, 30) NOT NULL DEFAULT 100000.00;

@@ -1,7 +1,7 @@
 // import React from "react";
 import { LucideSearch } from "lucide-react";
 // import { useSidebarSearchStore } from "../../store/SideBarStore";
-import FloatingWindow from "../ui/floatingWindow";
+import FloatingWindow from "../ui/FloatingWindow";
 import {useState,useEffect} from "react"
 import axios from "axios";
 import { useAuthStore } from "../../store/authStore";
@@ -72,4 +72,4 @@ console.log(availableStocks);
       <FloatingWindow Stocks={availableStocks}></FloatingWindow>
     </div>
   );
-}
+}

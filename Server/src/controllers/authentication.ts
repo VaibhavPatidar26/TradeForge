@@ -4,25 +4,26 @@ import bcrypt from "bcrypt";
 import prisma from "../lib/prisma.js";
 
 const JWT_SECRET: string = process.env.JWT_SECRET || " ";
-const JWT_REFRESH_SECRET: string = process.env.JWT_REFRESH_SECRET || JWT_SECRET;
+// const JWT_REFRESH_SECRET: string = process.env.JWT_REFRESH_SECRET || JWT_SECRET;
 
 if (!JWT_SECRET) {
     throw new Error("JWT_SECRET is not defined in .env");
 }
 
-function generateTokens(userId: string, email: string) {
-    const accessToken = jwt.sign(
-        { userId, emailId: email },
-        JWT_SECRET,
-        { expiresIn: "15m" }
-    );
-    const refreshToken = jwt.sign(
-        { userId, emailId: email },
-        JWT_REFRESH_SECRET,
-        { expiresIn: "7d" }
-    );
-    return { accessToken, refreshToken };
-}
+// function generateTokens(userId: string, email: string) {
+//     const accessToken = jwt.sign(
+//         { userId, emailId: email },
+//         JWT_SECRET,
+//         { expiresIn: "7d" }
+//     );
+
+//     const refreshToken = jwt.sign(
+//         { userId, emailId: email },
+//         // JWT_REFRESH_SECRET,
+//         { expiresIn: "7d" }
+//     );
+//     return { accessToken, refreshToken };
+// }
 
 export async function register(req: Request, res: Response) {
     try {
@@ -48,24 +49,30 @@ export async function register(req: Request, res: Response) {
 
         const hashedPassword = await bcrypt.hash(password, 10);
 
-        const { accessToken, refreshToken } = generateTokens("temp_id", email);
+        // const { accessToken, refreshToken } = generateTokens("temp_id", email);
 
         const user = await prisma.user.create({
             data: {
                 name,
                 email,
                 password: hashedPassword,
-                refreshToken 
+                // refreshToken 
             }
         });
 
         // Regenerate tokens with actual user ID
-        const tokens = generateTokens(user.id, user.email);
+
+        const uesrId = user.id;
+        const token = jwt.sign({
+            userId:uesrId,
+            email:user.email
+        },JWT_SECRET)
+        // const tokens = generateTokens(user.id, user.email);
         
-        await prisma.user.update({
-            where: { id: user.id },
-            data: { refreshToken: tokens.refreshToken }
-        });
+        // await prisma.user.update({
+        //     where: { id: user.id },
+        //     data: { refreshToken: tokens.refreshToken }
+        // });
 
         return res.status(201).json({
             message: "User registered successfully",
@@ -74,10 +81,11 @@ export async function register(req: Request, res: Response) {
                 id: user.id,
                 name: user.name,
                 email: user.email,
-                balance: user.balance
+                balance: user.balance,
+                token:token
             },
-            token: tokens.accessToken,
-            refreshToken: tokens.refreshToken
+            // token: tokens.accessToken,
+            // refreshToken: tokens.refreshToken
         });
 
     } catch (error: any) {
@@ -120,23 +128,27 @@ export async function login(req: Request, res: Response) {
             });
         }
 
-        const { accessToken, refreshToken } = generateTokens(user.id, user.email);
+        const token =  jwt.sign({
+            userId : user.id,
+            email : user.email,
+        },JWT_SECRET)
+        // const { accessToken, refreshToken } = generateTokens(user.id, user.email);
 
-        await prisma.user.update({
-            where: { id: user.id },
-            data: { refreshToken }
-        });
+        // await prisma.user.update({
+        //     where: { id: user.id },
+        //     data: { refreshToken }
+        // });
 
         return res.status(200).json({
             message: "Login successful",
             success: true,
-            token: accessToken,
-            refreshToken,
+            token:token,
             user: {
                 id: user.id,
                 name: user.name,
                 email: user.email,
-                balance: user.balance
+                balance: user.balance,
+                token:token
             }
         });
 
@@ -149,45 +161,45 @@ export async function login(req: Request, res: Response) {
     }
 }
 
-export async function refresh(req: Request, res: Response) {
-    try {
-        const { refreshToken } = req.body;
+// export async function refresh(req: Request, res: Response) {
+//     try {
+//         const { refreshToken } = req.body;
 
-        if (!refreshToken) {
-            return res.status(401).json({ message: "Refresh token is required", success: false });
-        }
+//         if (!refreshToken) {
+//             return res.status(401).json({ message: "Refresh token is required", success: false });
+//         }
 
-        let decoded: any;
-        try {
-            decoded = jwt.verify(refreshToken, JWT_REFRESH_SECRET);
-        } catch (err) {
-            return res.status(403).json({ message: "Invalid refresh token", success: false });
-        }
+//         let decoded: any;
+//         try {
+//             decoded = jwt.verify(refreshToken, JWT_REFRESH_SECRET);
+//         } catch (err) {
+//             return res.status(403).json({ message: "Invalid refresh token", success: false });
+//         }
 
-        const user = await prisma.user.findUnique({
-            where: { id: decoded.userId }
-        });
+//         const user = await prisma.user.findUnique({
+//             where: { id: decoded.userId }
+//         });
 
-        if (!user || user.refreshToken !== refreshToken) {
-            return res.status(403).json({ message: "Invalid refresh token", success: false });
-        }
+//         if (!user || user.refreshToken !== refreshToken) {
+//             return res.status(403).json({ message: "Invalid refresh token", success: false });
+//         }
 
-        const tokens = generateTokens(user.id, user.email);
+//         const tokens = generateTokens(user.id, user.email);
 
-        await prisma.user.update({
-            where: { id: user.id },
-            data: { refreshToken: tokens.refreshToken }
-        });
+//         await prisma.user.update({
+//             where: { id: user.id },
+//             data: { refreshToken: tokens.refreshToken }
+//         });
 
-        return res.status(200).json({
-            message: "Token refreshed",
-            success: true,
-            token: tokens.accessToken,
-            refreshToken: tokens.refreshToken
-        });
+//         return res.status(200).json({
+//             message: "Token refreshed",
+//             success: true,
+//             token: tokens.accessToken,
+//             refreshToken: tokens.refreshToken
+//         });
 
-    } catch (error: any) {
-        console.error("Refresh token error:", error);
-        return res.status(500).json({ message: "Internal server error", success: false });
-    }
-}
+//     } catch (error: any) {
+//         console.error("Refresh token error:", error);
+//         return res.status(500).json({ message: "Internal server error", success: false });
+//     }
+// }

@@ -28,7 +28,6 @@ export default function Login() {
             const data = await LoginApi(Email, Password);
             if (data.success) {
                 login(data.token, data.refreshToken, data.user.id);
-                localStorage.setItem("token", data.token);
                 navigate("/dashboard");
             } else {
                 setErrorMsg(data.message || "Login failed");

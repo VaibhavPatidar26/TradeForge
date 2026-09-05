@@ -15,6 +15,7 @@ export async function isLoggedin(req: Request, res: Response, next: NextFunction
 
     try {
         if (!token || !token.startsWith("Bearer ")) {
+            console.log("token not found");
             return res.status(401).json({
                 message: "invalid token or incorrect",
                 success: false
@@ -46,3 +47,4 @@ export async function isLoggedin(req: Request, res: Response, next: NextFunction
     }
 
 }
+export default isLoggedin

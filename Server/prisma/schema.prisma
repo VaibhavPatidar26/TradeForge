@@ -17,7 +17,7 @@ model User {
   password String
 
   // Available cash balance in INR
-  balance  Decimal @default(100000.00)
+  balance Decimal @default(100000.00)
 
   refreshToken String? @db.Text
 
@@ -30,16 +30,20 @@ model User {
   updatedAt DateTime @updatedAt
 }
 
-model Stocks{
- segment         String
-name            String
-exchange        String
-instrument_type String
-instrument_key  String @id
-trading_symbol  String
 
+// ==================== STOCKS ====================
 
-  @@index([name,instrument_key])
+model Stocks {
+  segment         String
+  name            String
+  exchange        String
+  instrument_type String
+  instrument_key  String @id
+  trading_symbol  String
+
+  watchlists Watchlist[]
+
+  @@index([name, instrument_key])
 }
 
 
@@ -65,7 +69,6 @@ model Asset {
   holdings     Holding[]
   orders       Order[]
   transactions Transaction[]
-  watchlists   Watchlist[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -166,14 +169,14 @@ model Transaction {
 model Watchlist {
   id String @id @default(uuid())
 
-  userId  String
-  assetId String
+  userId String
+  stockId String
 
-  user  User  @relation(fields: [userId], references: [id])
-  asset Asset @relation(fields: [assetId], references: [id])
+  user  User   @relation(fields: [userId], references: [id])
+  stock Stocks @relation(fields: [stockId], references: [instrument_key])
 
   createdAt DateTime @default(now())
 
-  // Prevent duplicate watchlist entries
-  @@unique([userId, assetId])
+  // Prevent duplicate stock in user's watchlist
+  @@unique([userId, stockId])
 }
