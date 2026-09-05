@@ -8,10 +8,20 @@ import {
   Wallet,
   ArrowUpRight,
   ArrowDownRight,
-  Clock
+  Clock,
+  ChartNoAxesColumnDecreasing
 } from "lucide-react";
 
+
 export default function Dashboard() {
+  const uri = import.meta.env.VITE_SOCKET_URL;
+  
+
+
+
+
+
+
   const navigate = useNavigate();
   const logout = useAuthStore((state) => state.logout);
 
@@ -27,6 +37,22 @@ export default function Dashboard() {
     if (!token) {
       navigate("/login");
     }
+    const ws = new WebSocket(uri);
+    ws.onopen = function(){
+      console.log("client connected")
+    }
+    ws.onmessage = function(e){
+      console.log(e.data)
+    }
+    ws.onerror = function(){
+      console.log("some error ocucured");
+    }
+
+    ws.onclose = function(){
+    console.log("client disconnected");
+    }
+
+
   }, [token, navigate]);
 
  return (

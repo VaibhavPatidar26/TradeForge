@@ -1,50 +1,64 @@
+
 import { Request, Response, NextFunction } from "express";
 import jwt from "jsonwebtoken";
-import prisma from "@prisma/client"
 
-export async function isLoggedin(req: Request, res: Response, next: NextFunction) {
-    const JWT_SECRET = process.env.JWT_SECRET || "";
-    const token = req.headers.authorization;
+interface JwtPayload {
+    userId: string;
+    email: string;
+}
 
-    interface jwtPayload {
-        userId: string,
-        emailId: string
+export async function isLoggedin(
+    req: Request,
+    res: Response,
+    next: NextFunction
+) {
+    const JWT_SECRET = process.env.JWT_SECRET;
 
+    if (!JWT_SECRET) {
+        return res.status(500).json({
+            message: "JWT_SECRET is not configured",
+            success: false
+        });
     }
 
+    const authorization = req.headers.authorization;
 
     try {
-        if (!token || !token.startsWith("Bearer ")) {
-            console.log("token not found");
+        if (!authorization || !authorization.startsWith("Bearer ")) {
             return res.status(401).json({
-                message: "invalid token or incorrect",
+                message: "Authorization token is required",
                 success: false
             });
         }
-        const decoded = jwt.verify(token.split(" ")[1], JWT_SECRET) as jwtPayload
 
-        const userId = decoded.userId;
-        const emailId = decoded.emailId;
-        if (!userId) {
-            return res.status(403).json({
-                message: "token not present",
+        const token = authorization.split(" ")[1];
+
+        const decoded = jwt.verify(
+            token,
+            JWT_SECRET
+        ) as JwtPayload;
+
+        if (!decoded.userId) {
+            return res.status(401).json({
+                message: "Invalid token",
                 success: false
-            })
+            });
         }
 
-        req.userId = userId;
-        req.emailId = emailId;
+        req.userId = decoded.userId;
+        req.emailId = decoded.email;
 
         next();
-    }
 
-    catch (err) {
-        console.log(err);
+    } catch (error) {
+        console.error("JWT verification error:", error);
+
         return res.status(401).json({
-            message: "invaid token",
+            message: "Invalid or expired token",
             success: false
-        })
+        });
     }
-
 }
-export default isLoggedin
+
+export default isLoggedin;
+

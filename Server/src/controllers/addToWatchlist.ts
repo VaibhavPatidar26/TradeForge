@@ -39,15 +39,18 @@ async function addToWatchlist(req: any, res: any) {
         });
     }
 
-    await prisma.watchlist.create({
+   const watchlistItem = await prisma.watchlist.create({
         data: {
             userId,
             stockId: stockId
-        }
+        },
+        include:{stock:true}
     });
+    
 
     return res.status(201).json({
-        message: "Added to watchlist"
+        message: "Added to watchlist",
+        watchlist:watchlistItem
     });
 }
 catch(err){

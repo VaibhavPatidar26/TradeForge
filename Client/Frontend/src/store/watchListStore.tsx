@@ -39,7 +39,7 @@ export const useWatchlistStore = create<WatchlistState>(function (set, get) {
                 set({ loading: true });
 
                 const response = await api.get(
-                    `/api/watchlist/fetch`,
+                    `/api/search/fetchwatchlist`,
                     {
                         headers: {
                             Authorization: `Bearer ${token}`
@@ -79,6 +79,10 @@ export const useWatchlistStore = create<WatchlistState>(function (set, get) {
                 );
 
                 const newWatchlistItem = response.data.watchlist;
+                  if (!newWatchlistItem) {
+            console.log("addToWatchlist: server did not return a watchlist item");
+            return false;
+        }
 
                 set(function (state) {
                     return {
