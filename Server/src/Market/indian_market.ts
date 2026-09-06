@@ -1,13 +1,13 @@
 import UpstoxClient from "upstox-js-sdk";
 import "dotenv/config";
 import redis, { setPrice } from "../redis/client.js";
-import { broadcastPrice } from "../websockets/connection.js";
-
+import { broadcastPrice } from "../websockets/sendToFront.js";
 const token = process.env.UPSTOX_TOKEN;
 
 if (!token) {
     throw new Error("UPSTOX_ACCESS_TOKEN is missing");
 }
+
 
 const defaultClient = UpstoxClient.ApiClient.instance;
 

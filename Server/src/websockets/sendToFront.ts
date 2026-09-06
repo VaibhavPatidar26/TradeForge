@@ -1,23 +1,30 @@
-// import { wss } from "../server.js";
+import { WebSocket } from "ws";
+import { mp, watchlists } from "./connection.js";
 
-// export function broadcastPrice(
-//     instrumentKey: string,
-//     price: number
-// ) {
-//     console.log("Broadcasting:", instrumentKey, price);
-//     console.log("Connected clients:", wss.clients.size);
+export function broadcastPrice(
+    instrumentKey: string,
+    price: number
+) {
+    for (const [socket, userId] of mp) {
 
-//     const message = JSON.stringify({
-//         type: "PRICE_UPDATE",
-//         instrumentKey,
-//         price
-//     });
+        if (socket.readyState !== WebSocket.OPEN) {
+            return;
+        }
 
-//     wss.clients.forEach((client) => {
-//         console.log("Client state:", client.readyState);
+        const userWatchlist = watchlists.get(userId);
 
-//         if (client.readyState === 1) {
-//             client.send(message);
-//         }
-//     });
-// }
+        if (!userWatchlist) {
+            return;
+        }
+
+        if (userWatchlist.includes(instrumentKey)) {
+
+            socket.send(JSON.stringify({
+                type: "PRICE_UPDATE",
+                instrumentKey: instrumentKey,
+                price: price
+            }));
+
+        }
+    }
+}
