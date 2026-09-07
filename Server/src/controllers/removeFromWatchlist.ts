@@ -1,5 +1,6 @@
 import { Request, Response } from "express";
 import prisma from "../lib/prisma.js";
+import { removeStockFromWatchlist } from "../websockets/connection.js";
 
 export default async function removeFromWatchlist(req: Request, res: Response) {
     try {
@@ -27,6 +28,8 @@ export default async function removeFromWatchlist(req: Request, res: Response) {
                 stockId:stockId
             }
         });
+
+        removeStockFromWatchlist(userId, stockId);
 
         return res.status(200).json({
             message: "Successfully removed from watchlist",

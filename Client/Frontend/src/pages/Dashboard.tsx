@@ -2,6 +2,7 @@ import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuthStore } from "../store/authStore";
 import SidePanel from "../components/layout/Sidebar";
+import useWebSocket from "../hooks/UseWebSocket";
 import {
   LogOut,
   TrendingUp,
@@ -14,46 +15,25 @@ import {
 
 
 export default function Dashboard() {
-  const uri = import.meta.env.VITE_SOCKET_URL;
-  
-
-
-
-
-
-
   const navigate = useNavigate();
   const logout = useAuthStore((state) => state.logout);
-
 
   const handleLogout = () => {
     logout();
     localStorage.removeItem("token");
     navigate("/login");
   };
-  
+
   const token = useAuthStore((state) => state.token);
+
   useEffect(() => {
     if (!token) {
       navigate("/login");
     }
-    const ws = new WebSocket(uri);
-    ws.onopen = function(){
-      console.log("client connected")
-    }
-    ws.onmessage = function(e){
-      console.log(e.data)
-    }
-    ws.onerror = function(){
-      console.log("some error ocucured");
-    }
-
-    ws.onclose = function(){
-    console.log("client disconnected");
-    }
-
-
   }, [token, navigate]);
+
+  // Handles auth_connection handshake + PRICE_UPDATE -> watchListStore wiring
+  useWebSocket();
 
  return (
     <div className="flex flex-col h-[90.5vh] w-full overflow-hidden bg-[#0b0e11]">

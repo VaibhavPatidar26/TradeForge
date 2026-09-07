@@ -8,13 +8,13 @@ export function broadcastPrice(
     for (const [socket, userId] of mp) {
 
         if (socket.readyState !== WebSocket.OPEN) {
-            return;
+            continue
         }
 
         const userWatchlist = watchlists.get(userId);
 
         if (!userWatchlist) {
-            return;
+            continue;
         }
 
         if (userWatchlist.includes(instrumentKey)) {

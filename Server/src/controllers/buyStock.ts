@@ -4,12 +4,12 @@ import redis from "../redis/client.js";
 
 export async function buyAsset(req: Request, res: Response) {
     try {
-        const { userId, assetId, quantity } = req.body;
+        const { userId, stockId, quantity } = req.body;
 
         // 1. Validate input
-        if (!userId || !assetId || !quantity) {
+        if (!userId || !stockId || !quantity) {
             return res.status(400).json({
-                message: "userId, assetId and quantity are required"
+                message: "userId, stockId and quantity are required"
             });
         }
 
@@ -20,13 +20,13 @@ export async function buyAsset(req: Request, res: Response) {
         }
 
         // 2. Find the asset
-        const asset = await prisma.asset.findUnique({
-            where: {
-                id: assetId
+        const stock = await prisma.stocks.findUnique({
+            where:{
+                instrument_key:stockId
             }
         });
 
-        if (!asset) {
+        if (!stock) {
             return res.status(404).json({
                 message: "Asset not found"
             });
@@ -34,7 +34,7 @@ export async function buyAsset(req: Request, res: Response) {
 
         // 3. Get latest price from Redis
         // asset.symbol = Upstox instrument key
-        const redisPrice = await redis.get(asset.symbol);
+        const redisPrice = await redis.get(stock.instrument_key);
 
         if (!redisPrice) {
             return res.status(400).json({
@@ -80,9 +80,9 @@ export async function buyAsset(req: Request, res: Response) {
             // 7. Check existing holding
             const holding = await tx.holding.findUnique({
                 where: {
-                    userId_assetId: {
+                    userId_stockId: {
                         userId,
-                        assetId
+                        stockId
                     }
                 }
             });
@@ -118,7 +118,7 @@ export async function buyAsset(req: Request, res: Response) {
                 await tx.holding.create({
                     data: {
                         userId,
-                        assetId,
+                        stockId,
                         quantity: qty,
                         avgPrice: price
                     }
@@ -134,7 +134,7 @@ export async function buyAsset(req: Request, res: Response) {
                     executedPrice: price,
                     total: total,
                     userId,
-                    assetId
+                    stockId
                 }
             });
 
@@ -146,7 +146,7 @@ export async function buyAsset(req: Request, res: Response) {
                     price: price,
                     total: total,
                     userId,
-                    assetId,
+                    stockId,
                     orderId: newOrder.id
                 }
             });

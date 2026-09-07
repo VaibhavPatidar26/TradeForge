@@ -1,4 +1,6 @@
 import prisma from "../lib/prisma.js";
+import { subscribeToStocks } from "../Market/indian_market.js";
+import { updatewatchlist } from "../websockets/connection.js";
 
 async function addToWatchlist(req: any, res: any) {
     const { stockId } = req.params;
@@ -47,7 +49,9 @@ async function addToWatchlist(req: any, res: any) {
         include:{stock:true}
     });
     
-
+    await subscribeToStocks([stockId]);
+    console.log("subscribed to stock",stockId);
+    updatewatchlist(userId,stockId);
     return res.status(201).json({
         message: "Added to watchlist",
         watchlist:watchlistItem

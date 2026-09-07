@@ -16,17 +16,40 @@ oauth2.accessToken = token;
 
 const streamer = new UpstoxClient.MarketDataStreamerV3();
 
-const instruments = [
-    "NSE_EQ|INE002A01018", // Reliance
-    "NSE_EQ|INE467B01029", // TCS
-];
+
+const activeStocks = new Set<string>();
+
+
+export async function subscribeToStocks(idForLive:string[]){
+try{
+
+
+    const newIds = idForLive.filter((ids)=>!activeStocks.has(ids))
+    if(newIds.length===0) return;
+
+
+    for(let i=0;i<newIds.length;i++){
+        activeStocks.add(newIds[i])
+    }
+    streamer.subscribe(newIds, "ltpc");
+    console.log("subscribe to stocks in", activeStocks);
+}
+catch(err){
+    console.log(err);
+}
+}
+
 
 streamer.on("open", () => {
     console.log("Connected to Upstox");
 
-    streamer.subscribe(instruments, "ltpc");
+   if(activeStocks.size>0){
+    subscribeToStocks(Array.from(activeStocks));
+   }
+   else{
+    console.log("no stocks to show live feed");
+   }
 
-    console.log("Subscribed to:", instruments);
 });
 streamer.on("message", async (data: Buffer) => {
     try {
@@ -57,9 +80,9 @@ streamer.on("close", () => {
     console.log("Upstox WebSocket closed");
 });
 
-async function connect() {
-    await redis.connect();
+export async function Upstoxconnect() {
+    // await redis.connect();
 
-    streamer.connect();
+    await streamer.connect();
 }
-connect();
+

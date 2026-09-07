@@ -22,18 +22,20 @@ type WatchlistItem = {
 type WatchlistState = {
     watchlist: WatchlistItem[];
     loading: boolean;
+    prices:Record<string,number>;
 
     fetchWatchlist: (token: string) => Promise<void>;
     addToWatchlist: (stockId: string, token: string) => Promise<boolean>;
     removeFromWatchlist: (stockId: string, token: string) => Promise<boolean>;
     isInWatchlist: (stockId: string) => boolean;
+    updatePrice:(stockId:string,price:number)=>void;
 };
 
 export const useWatchlistStore = create<WatchlistState>(function (set, get) {
     return {
         watchlist: [],
         loading: false,
-
+        prices:{},
         fetchWatchlist: async function (token: string) {
             try {
                 set({ loading: true });
@@ -62,7 +64,16 @@ export const useWatchlistStore = create<WatchlistState>(function (set, get) {
                 });
             }
         },
-
+        updatePrice:function( stockId:string,price:number){
+            set(function(state){
+                return{
+                    prices:{
+                        ...state.prices,
+                        [stockId]:price
+                    }
+                }
+            })
+        },
         addToWatchlist: async function (
             stockId: string,
             token: string

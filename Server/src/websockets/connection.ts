@@ -2,101 +2,156 @@ import { WebSocketServer, WebSocket } from "ws";
 import jwt from "jsonwebtoken";
 import "dotenv/config";
 import prisma from "../lib/prisma.js";
+import { subscribeToStocks } from "../Market/indian_market.js";
+import redis from "../redis/client.js";
 
 interface JwtPayload {
     userId: string;
 }
-
-const JWT_SECRET = process.env.JWT_SECRET || "";
-
-export const wss = new WebSocketServer({
-    port: 8080
-});
-
 const mp = new Map<WebSocket, string>();
 
 const watchlists = new Map<string, string[]>();
 
-wss.on("connection", function (ws) {
+const JWT_SECRET = process.env.JWT_SECRET || "";
 
-    console.log("Client connected");
+export default async function startWebSocketServer() {
 
-    ws.send("Welcome to TradeForge");
 
-    ws.on("message", async function (data) {
+    const wss = new WebSocketServer({
+        port: 8080
+    }, () => {
+        console.log("websocket server started at 8080",)
+    });
 
-        console.log("MESSAGE RECEIVED:", data.toString());
+    wss.on("connection", function (ws) {
 
-        const message = JSON.parse(data.toString());
+        console.log("Client connected");
 
-        console.log("MESSAGE OBJECT:", message);
-        console.log("MESSAGE TYPE:", message.type);
+        ws.send("Welcome to TradeForge");
 
-        if (message.type === "auth_connection") {
+        ws.on("message", async function (data) {
 
-            const token = message.token;
+            console.log("MESSAGE RECEIVED:", data.toString());
 
-            try {
+            const message = JSON.parse(data.toString());
 
-                const decoded = jwt.verify(
-                    token,
-                    JWT_SECRET
-                ) as JwtPayload;
+            console.log("MESSAGE OBJECT:", message);
+            console.log("MESSAGE TYPE:", message.type);
 
-                console.log("User authenticated:", decoded.userId);
+            if (message.type === "auth_connection") {
 
-                // Store socket -> userId
-                mp.set(ws, decoded.userId);
+                const token = message.token;
 
-                // Fetch user's watchlist
-                const userWatchlist = await prisma.watchlist.findMany({
-                    where: {
-                        userId: decoded.userId
-                    },
-                    include: {
-                        stock: true
+                try {
+
+                    const decoded = jwt.verify(
+                        token,
+                        JWT_SECRET
+                    ) as JwtPayload;
+
+                    console.log("User authenticated:", decoded.userId);
+
+                    // Store socket -> userId
+                    mp.set(ws, decoded.userId);
+
+                    // Fetch user's watchlist
+                    const userWatchlist = await prisma.watchlist.findMany({
+                        where: {
+                            userId: decoded.userId
+                        },
+                        include: {
+                            stock: true
+                        }
+                    });
+
+                    // Extract instrument keys
+                    const instrumentKeys = userWatchlist.map(function (item) {
+                        return item.stock.instrument_key;
+                    });
+                    //subscribe to the instrument keys here
+                    subscribeToStocks(instrumentKeys || []);
+                    // Store userId -> instrumentKeys
+                    watchlists.set(
+                        decoded.userId,
+                        instrumentKeys
+                    );
+                    for (const stockKey of instrumentKeys) {
+                        const cachedPrice = await redis.get(stockKey);
+                        if (cachedPrice) {
+                            ws.send(JSON.stringify({
+                                type: "PRICE_UPDATE",
+                                instrumentKey: stockKey,
+                                price: Number(cachedPrice)
+                            }));
+                            console.log(`Pushed cached price for ${stockKey}: ₹${cachedPrice}`);
+                        }
                     }
-                });
 
-                // Extract instrument keys
-                const instrumentKeys = userWatchlist.map(function (item) {
-                    return item.stock.instrument_key;
-                });
+                    console.log(
+                        "User watchlist:",
+                        instrumentKeys
+                    );
 
-                // Store userId -> instrumentKeys
-                watchlists.set(
-                    decoded.userId,
-                    instrumentKeys
-                );
+                } catch (error) {
 
-                console.log(
-                    "User watchlist:",
-                    instrumentKeys
-                );
+                    console.log("Invalid token", error);
 
-            } catch (error) {
+                    ws.close();
+                }
+            }
+        });
 
-                console.log("Invalid token", error);
+        ws.on("close", function () {
 
-                ws.close();
+            const userId = mp.get(ws);
+
+            // Remove socket
+            mp.delete(ws);
+
+            // Remove user's watchlist
+            if (userId) {
+                watchlists.delete(userId);
+            }
+
+            console.log("Client disconnected");
+        });
+    });
+}
+
+export async function updatewatchlist(userId: string, stockId: string) {
+    const currentList = watchlists.get(userId) || [];
+    if (!currentList.includes(stockId)) {
+        watchlists.set(userId, [...currentList, stockId]);
+        console.log("updated watchlist", watchlists.get(userId));
+    }
+
+    // If Redis already has a cached price, push it immediately to the user's socket
+    try {
+        const cachedPrice = await redis.get(stockId);
+        if (cachedPrice) {
+            for (const [socket, uId] of mp) {
+                if (uId === userId && socket.readyState === WebSocket.OPEN) {
+                    socket.send(JSON.stringify({
+                        type: "PRICE_UPDATE",
+                        instrumentKey: stockId,
+                        price: Number(cachedPrice)
+                    }));
+                    console.log(`Pushed cached price on add for ${stockId}: ₹${cachedPrice}`);
+                }
             }
         }
-    });
+    } catch (err) {
+        console.error("Error pushing cached price on add:", err);
+    }
+}
 
-    ws.on("close", function () {
+export function removeStockFromWatchlist(userId: string, stockId: string) {
+    const currentList = watchlists.get(userId);
+    if (currentList) {
+        watchlists.set(userId, currentList.filter((id) => id !== stockId));
+        console.log("removed from watchlist, updated list:", watchlists.get(userId));
+    }
+}
 
-        const userId = mp.get(ws);
+export { mp, watchlists };
 
-        // Remove socket
-        mp.delete(ws);
-
-        // Remove user's watchlist
-        if (userId) {
-            watchlists.delete(userId);
-        }
-
-        console.log("Client disconnected");
-    });
-});
-
-export {mp,watchlists}

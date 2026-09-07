@@ -8,6 +8,8 @@ import { orderRouter } from "./Router/orderRouter.js";
 import redis from "./redis/client.js";
 import findRouter from "./Router/findRouter.js";
 import createRouter from "./Router/createRouter.js";
+import startWebSocketServer from "./websockets/connection.js";
+import { Upstoxconnect } from "./Market/indian_market.js";
 const app = express();
 
 app.use(cors());
@@ -39,6 +41,10 @@ const PORT = process.env.PORT || 3000;
 await redis.connect().then(() => {
     console.log("connected on redis");
 });
+await startWebSocketServer();
+await Upstoxconnect();
+
+
 app.listen(PORT, () => {
     console.log(`server start on ${PORT}`);
 });

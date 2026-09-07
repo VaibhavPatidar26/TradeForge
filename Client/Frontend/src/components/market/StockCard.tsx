@@ -1,4 +1,3 @@
-import React from "react";
 import { useWatchlistStore } from "../../store/watchListStore";
 
 type Stock = {
@@ -16,8 +15,11 @@ type Props = {
 };
 
 export default function StockCard({ stock, onAdd, onRemove, isWatchlistView = false }: Props) {
-    // Subscribe directly to the watchlist array for instant re-renders
+    // Subscribe directly to the watchlist array and prices for instant re-renders
     const watchlist = useWatchlistStore((state) => state.watchlist);
+    const prices = useWatchlistStore((state) => state.prices);
+
+    const currentPrice = stock?.instrument_key ? prices[stock.instrument_key] : undefined;
 
     // Check if item exists in watchlist
     const alreadyAdded = watchlist.some((item) => 
@@ -39,7 +41,20 @@ export default function StockCard({ stock, onAdd, onRemove, isWatchlistView = fa
                     {stock.exchange}
                 </span>
             )}
-            
+
+            {/* Live Price Display */}
+            <div className="flex flex-col items-end shrink-0 tabular-nums">
+                {currentPrice !== undefined ? (
+                    <>
+                        <span className="text-sm font-semibold text-emerald-400">
+                            ₹{currentPrice.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        </span>
+                        <span className="text-[10px] text-emerald-500/80 font-medium">● Live</span>
+                    </>
+                ) : isWatchlistView ? (
+                    <span className="text-xs text-gray-500">—</span>
+                ) : null}
+            </div>
             {isWatchlistView ? (
                 /* Watchlist view: Show delete button */
                 <button
