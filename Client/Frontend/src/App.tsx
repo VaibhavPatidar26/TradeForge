@@ -1,6 +1,3 @@
-import React from 'react'
-import { useState } from 'react'
-import Navbar from './components/layout/Navbar'
 import Landing from './pages/Landing';
 import { Route, Routes } from 'react-router'
 import Login from './pages/Login';

@@ -1,4 +1,3 @@
-import express from "express";
 import prisma from "../lib/prisma.js"
 
 async function searchStock(req:any,res:any){

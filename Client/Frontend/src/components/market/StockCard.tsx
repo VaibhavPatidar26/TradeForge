@@ -1,3 +1,4 @@
+import { useStockStore } from "../../store/stockStore";
 import { useWatchlistStore } from "../../store/watchListStore";
 
 type Stock = {
@@ -5,6 +6,8 @@ type Stock = {
     name: string;
     exchange: string;
     trading_symbol: string;
+    segment: string;
+    instrument_type: string;
 };
 
 type Props = {
@@ -16,6 +19,12 @@ type Props = {
 
 export default function StockCard({ stock, onAdd, onRemove, isWatchlistView = false }: Props) {
     // Subscribe directly to the watchlist array and prices for instant re-renders
+
+    const setStock = useStockStore(function(state){
+        return state.setStock;
+    })
+
+
     const watchlist = useWatchlistStore((state) => state.watchlist);
     const prices = useWatchlistStore((state) => state.prices);
 
@@ -27,7 +36,9 @@ export default function StockCard({ stock, onAdd, onRemove, isWatchlistView = fa
     );
 
     return (
-        <div className="flex cursor-pointer items-center gap-3 border-b border-[#1a2028] px-3 py-2.5 transition-colors last:border-b-0 hover:bg-[#1a2028]">
+        <div className="flex cursor-pointer items-center gap-3 border-b border-[#1a2028] px-3 py-2.5 transition-colors last:border-b-0 hover:bg-[#1a2028]" onClick={()=>{
+            setStock(stock)
+        }}>
             <div className="flex min-w-0 flex-1 flex-col">
                 <span className="truncate text-sm font-medium text-gray-200">
                     {stock.name}

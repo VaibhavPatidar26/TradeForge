@@ -1,4 +1,12 @@
+import { useStockStore } from "../../store/stockStore";
+
 export default function OrderPanel() {
+
+  const currentStock = useStockStore(function(state){
+    return state.stock
+  })
+console.log(currentStock);
+  
   return (
     <div className="w-[300px] h-full bg-[#0b0e14] border-l border-[#1f2937] p-4 flex flex-col">
       
@@ -6,7 +14,11 @@ export default function OrderPanel() {
       <h2 className="text-lg font-semibold text-white mb-6">
         Market Order
       </h2>
-
+      {//stock details
+      }
+      <div className="bg-white">
+        {currentStock?.name} {currentStock?.exchange}
+      </div>
       {/* Input Section */}
       <div className="flex flex-col gap-2 mb-6">
         <label className="text-xs text-gray-400 font-medium uppercase tracking-wider">

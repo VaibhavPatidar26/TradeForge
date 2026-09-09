@@ -41,11 +41,11 @@ export async function fetchPortfolio(req: any, res: any) {
             currentPrice: item.currentPrice
         }
     })
-    //
 
-
-
-
-
+    return res.status(200).json({
+        message: "Portfolio fetched successfully",
+        success: true,
+        portfolio: userCurrentAsset
+    });
 
 }

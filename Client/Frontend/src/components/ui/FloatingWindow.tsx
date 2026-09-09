@@ -1,5 +1,5 @@
-import React from "react";
 import { useAuthStore } from "../../store/authStore";
+
 import StockCard from "../../components/market/StockCard";
 import { useWatchlistStore } from "../../store/watchListStore";
 

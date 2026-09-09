@@ -1,5 +1,5 @@
-import React from "react";
-import { usePanelStore } from "../../store/SideBarStore";
+import { usePanelStore } from "../../store/panelStore";
+
 
 export default function BottomPanelNavigation() {
   const { currentPanel, setCurrentPanel } = usePanelStore();

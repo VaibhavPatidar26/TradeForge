@@ -5,27 +5,12 @@ import SidePanel from "../components/layout/Sidebar";
 import useWebSocket from "../hooks/UseWebSocket";
 import OrderPanel from "../components/layout/OrderPanel";
 
-import {
-  LogOut,
-  TrendingUp,
-  Wallet,
-  ArrowUpRight,
-  ArrowDownRight,
-  Clock,
-  ChartNoAxesColumnDecreasing
-} from "lucide-react";
-// import OrderPanel from "../components/CenterContent/OrderPanel";
-
 
 export default function Dashboard() {
   const navigate = useNavigate();
-  const logout = useAuthStore((state) => state.logout);
 
-  const handleLogout = () => {
-    logout();
-    localStorage.removeItem("token");
-    navigate("/login");
-  };
+
+
 
   const token = useAuthStore((state) => state.token);
 

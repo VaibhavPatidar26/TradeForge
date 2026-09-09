@@ -1,5 +1,5 @@
-import React, { useEffect } from "react";
-import { usePanelStore } from "../../store/SideBarStore";
+import { useEffect } from "react";
+import { usePanelStore } from "../../store/panelStore";
 import { useWatchlistStore } from "../../store/watchListStore";
 import { useAuthStore } from "../../store/authStore";
 import StockCard from "../market/StockCard";
@@ -36,13 +36,16 @@ export default function MainContent() {
                     {watchlist.length > 0 ? (
                         watchlist.filter(Boolean).map(function (item) {
                             return (
-                                <StockCard 
+                                <StockCard
+                                    
                                     key={item.id} 
                                     stock={item.stock}
                                     isWatchlistView={true}
+                                    
                                     onRemove={(stockId) => {
                                         if (token) removeFromWatchlist(stockId, token);
                                     }}
+                                    
                                 />
                             );
                         })

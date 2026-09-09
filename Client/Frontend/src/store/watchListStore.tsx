@@ -1,6 +1,7 @@
 import { create } from "zustand";
-import { api } from "../api/axios";
+import axios from "axios";
 
+const BackendURL = import.meta.env.VITE_BACKEND_URL || "http://localhost:3000/";
 
 type Stock = {
     instrument_key: string;
@@ -22,26 +23,26 @@ type WatchlistItem = {
 type WatchlistState = {
     watchlist: WatchlistItem[];
     loading: boolean;
-    prices:Record<string,number>;
+    prices: Record<string, number>;
 
     fetchWatchlist: (token: string) => Promise<void>;
     addToWatchlist: (stockId: string, token: string) => Promise<boolean>;
     removeFromWatchlist: (stockId: string, token: string) => Promise<boolean>;
     isInWatchlist: (stockId: string) => boolean;
-    updatePrice:(stockId:string,price:number)=>void;
+    updatePrice: (stockId: string, price: number) => void;
 };
 
 export const useWatchlistStore = create<WatchlistState>(function (set, get) {
     return {
         watchlist: [],
         loading: false,
-        prices:{},
+        prices: {},
         fetchWatchlist: async function (token: string) {
             try {
                 set({ loading: true });
 
-                const response = await api.get(
-                    `/api/search/fetchwatchlist`,
+                const response = await axios.get(
+                    `${BackendURL}api/search/fetchwatchlist`,
                     {
                         headers: {
                             Authorization: `Bearer ${token}`
@@ -64,23 +65,23 @@ export const useWatchlistStore = create<WatchlistState>(function (set, get) {
                 });
             }
         },
-        updatePrice:function( stockId:string,price:number){
-            set(function(state){
-                return{
-                    prices:{
+        updatePrice: function (stockId: string, price: number) {
+            set(function (state) {
+                return {
+                    prices: {
                         ...state.prices,
-                        [stockId]:price
+                        [stockId]: price
                     }
-                }
-            })
+                };
+            });
         },
         addToWatchlist: async function (
             stockId: string,
             token: string
         ) {
             try {
-                const response = await api.post(
-                    `/api/watchlist/addtolist/${stockId}`,
+                const response = await axios.post(
+                    `${BackendURL}api/watchlist/addtolist/${stockId}`,
                     {},
                     {
                         headers: {
@@ -90,10 +91,10 @@ export const useWatchlistStore = create<WatchlistState>(function (set, get) {
                 );
 
                 const newWatchlistItem = response.data.watchlist;
-                  if (!newWatchlistItem) {
-            console.log("addToWatchlist: server did not return a watchlist item");
-            return false;
-        }
+                if (!newWatchlistItem) {
+                    console.log("addToWatchlist: server did not return a watchlist item");
+                    return false;
+                }
 
                 set(function (state) {
                     return {
@@ -120,8 +121,8 @@ export const useWatchlistStore = create<WatchlistState>(function (set, get) {
             token: string
         ) {
             try {
-                await api.delete(
-                    `/api/watchlist/removefromlist/${stockId}`,
+                await axios.delete(
+                    `${BackendURL}api/watchlist/removefromlist/${stockId}`,
                     {
                         headers: {
                             Authorization: `Bearer ${token}`

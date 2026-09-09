@@ -1,8 +1,8 @@
-import React from "react";
 import { MarketTicker } from "../SideBarParts/MarketTicker";
-import  SearchBar from "../SideBarParts/SearchBar";
+import SearchBar from "../SideBarParts/SearchBar";
 import BottomPanelNavigation from "../SideBarParts/PanelNavigation";
 import MainContent from "../SideBarParts/MainContent";
+
 
 function SidePanel() {
   return (
