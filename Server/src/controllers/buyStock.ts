@@ -4,7 +4,8 @@ import redis from "../redis/client.js";
 
 export async function buyAsset(req: Request, res: Response) {
     try {
-        const { userId, stockId, quantity } = req.body;
+        const userId = req.userId;
+        const { stockId, quantity } = req.body;
 
         // 1. Validate input
         if (!userId || !stockId || !quantity) {
@@ -79,10 +80,10 @@ export async function buyAsset(req: Request, res: Response) {
 
             // 7. Check existing holding
             const holding = await tx.holding.findUnique({
-                where: {
-                    userId_stockId: {
-                        userId,
-                        stockId
+                where:{
+                    userId_stockId:{
+                        stockId:stockId,
+                        userId:userId
                     }
                 }
             });

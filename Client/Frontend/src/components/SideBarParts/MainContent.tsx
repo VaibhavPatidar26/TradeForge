@@ -3,7 +3,7 @@ import { usePanelStore } from "../../store/panelStore";
 import { useWatchlistStore } from "../../store/watchListStore";
 import { useAuthStore } from "../../store/authStore";
 import StockCard from "../market/StockCard";
-
+import { Portfolio } from "./Portfolio";
 export default function MainContent() {
     const { currentPanel } = usePanelStore();
     const token = useAuthStore(function (state) {
@@ -61,9 +61,7 @@ export default function MainContent() {
 
     if (currentPanel === "portfolio") {
         return (
-            <div className="flex-1 h-full min-h-0 bg-[#0b0e11] text-white p-3">
-                <h1 className="text-lg font-semibold">Portfolio</h1>
-            </div>
+            <Portfolio></Portfolio>
         );
     }
 
