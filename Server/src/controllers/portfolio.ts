@@ -12,7 +12,7 @@ export async function fetchPortfolio(req: any, res: any) {
 
     //user found fetch his holdings;
 
-    const holdings = await prisma.holding.findMany({
+    const userCurrentHoldings = await prisma.holding.findMany({
         where: {
             userId: userId
         }
@@ -21,31 +21,21 @@ export async function fetchPortfolio(req: any, res: any) {
     //now we found the holdings we fetch the asset details from it.
     //first fetch the assetIds so get the assest name and then fetch live prices from redis
 
-    const assetIds = await holdings.map((item) => item.assetId);
+    const stockIds = await userCurrentHoldings.map((item) => item.stockId);
 
-    const assets = await prisma.asset.findMany({
+    const OwnedStocks = await prisma.stocks.findMany({
         where: {
-            id: {
-                in: assetIds
+            instrument_key: {
+                in: stockIds
             }
         }
     })
-    //now we have all assets which user is holding.
-    //we fetch the name of the assets and its current prices;
-    //we will show this on frontend;
-    const userCurrentAsset = assets.map((item) => {
-        return {
-            id: item.id,
-            name: item.name,
-            symbol: item.symbol,
-            currentPrice: item.currentPrice
-        }
-    })
-
+    //return the complete data OwnedStocks
+    console.log(OwnedStocks)
     return res.status(200).json({
         message: "Portfolio fetched successfully",
         success: true,
-        portfolio: userCurrentAsset
+        portfolio: OwnedStocks
     });
 
 }

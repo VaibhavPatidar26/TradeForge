@@ -1,14 +1,16 @@
 import router from 'express';
-import searchStock from '../controllers/searchStock.js'; 
+import searchStock from '../controllers/searchStock.js';
 import express from 'express';
 import isLoggedin from '../middlewares/isLoggedIn.js';
 import getWatchlist from '../controllers/fetchWatchList.js';
+import {fetchPortfolio} from '../controllers/portfolio.js';
 const Router = express.Router();
 
 const findRouter = Router;
 
-findRouter.get('/searchStock',isLoggedin,searchStock);
-findRouter.get("/fetchwatchlist",isLoggedin,getWatchlist)
+findRouter.get('/searchStock', isLoggedin, searchStock);
+findRouter.get("/fetchwatchlist", isLoggedin, getWatchlist)
+findRouter.get("/fetchportfolio", isLoggedin, fetchPortfolio)
 
 export default findRouter;
 
