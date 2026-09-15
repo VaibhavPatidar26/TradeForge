@@ -27,7 +27,10 @@ export default async function startWebSocketServer() {
 
         console.log("Client connected");
 
-        ws.send("Welcome to TradeForge");
+      ws.send(JSON.stringify({
+    type: "WELCOME",
+    message: "Welcome to TradeForge"
+}));
 
         ws.on("message", async function (data) {
 
@@ -120,6 +123,7 @@ try{
         to_date,
         from_date
     );
+    console.log("the candle data is",candles)
 
     ws.send(JSON.stringify({
         type: "SENDING_CANDLE_DATA",
