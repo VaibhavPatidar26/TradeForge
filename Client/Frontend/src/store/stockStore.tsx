@@ -1,3 +1,4 @@
+
 import { create } from "zustand";
 
 type Stock = {
@@ -12,13 +13,30 @@ type Stock = {
 type StockStore = {
     stock: Stock | null;
 
+    chartUnit: string;
+    chartInterval: number;
+    fromDate: string;
+    toDate: string;
+
     setStock: (stock: Stock) => void;
     clearStock: () => void;
+
+    setChartConfig: (
+        unit: string,
+        interval: number,
+        fromDate: string,
+        toDate: string
+    ) => void;
 };
 
 export const useStockStore = create<StockStore>(function (set) {
     return {
         stock: null,
+
+        chartUnit: "days",
+        chartInterval: 1,
+        fromDate: "",
+        toDate: "",
 
         setStock: function (stock) {
             set({
@@ -30,6 +48,22 @@ export const useStockStore = create<StockStore>(function (set) {
             set({
                 stock: null
             });
+        },
+
+        setChartConfig: function (
+            unit,
+            interval,
+            fromDate,
+            toDate
+        ) {
+            set({
+                chartUnit: unit,
+                chartInterval: interval,
+                fromDate: fromDate,
+                toDate: toDate
+            });
         }
     };
 });
+
+

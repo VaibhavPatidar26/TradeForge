@@ -4,7 +4,7 @@ import { useAuthStore } from "../store/authStore";
 import SidePanel from "../components/layout/Sidebar";
 import useWebSocket from "../hooks/UseWebSocket";
 import OrderPanel from "../components/layout/OrderPanel";
-
+import Chart from "../components/layout/Chart";
 
 export default function Dashboard() {
   const navigate = useNavigate();
@@ -33,6 +33,7 @@ return (
         {/* Main Charting/Trading Interface (Center Content) */}
         <div className="flex-1 overflow-y-auto p-4 text-white flex flex-col">
           {/* Your charts and middle content will go here */}
+          <Chart></Chart>
         </div>
         
         {/* OrderPanel locked to the right */}

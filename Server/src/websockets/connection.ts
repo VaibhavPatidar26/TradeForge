@@ -4,7 +4,7 @@ import "dotenv/config";
 import prisma from "../lib/prisma.js";
 import { subscribeToStocks } from "../Market/indian_market.js";
 import redis from "../redis/client.js";
-
+import fetchHistChart from "../services/HIstoricalChart.js";
 interface JwtPayload {
     userId: string;
 }
@@ -104,16 +104,33 @@ export default async function startWebSocketServer() {
 
 
            if (message.type == "CANDLE_STICK") {
+try{
 
-    const instrumentKey = message.instrumentKey;
 
+    const instrumentKey = message.instrument_key;
+    const candleDuration = message.candleDuration;
+    const to_date = message.to_date;
+    const from_date = message.from_date;
+    const unit = message.unit;
     // fetch historical data using instrumentKey
+    const candles = await fetchHistChart(
+        instrumentKey,
+        unit,
+        candleDuration,
+        to_date,
+        from_date
+    );
 
     ws.send(JSON.stringify({
         type: "SENDING_CANDLE_DATA",
         instrumentKey: instrumentKey,
         candles: candles
     }));
+
+}
+catch(err){
+    console.log(err);
+}   
 }
 
 

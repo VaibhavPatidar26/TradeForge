@@ -23,7 +23,7 @@ async function fetchHistChart(
             }
         );
 
-        console.log("HISTORICAL DATA:", response.data.data.candles);
+        // console.log("HISTORICAL DATA:", response.data.data.candles);
 
         return response.data.data.candles;
 
@@ -40,11 +40,13 @@ async function fetchHistChart(
     }
 }
 
-fetchHistChart(
-    "NSE_EQ|INE016A01026",
-    "days",
-    1,
-    "2026-09-15",
-    "2026-09-01"
-);
+export default fetchHistChart
+
+// fetchHistChart(
+//     "NSE_EQ|INE016A01026",
+//     "days",
+//     1,
+//     "2026-09-15",
+//     "2026-09-01"
+// );
 
