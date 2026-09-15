@@ -31,7 +31,7 @@ try{
     for(let i=0;i<newIds.length;i++){
         activeStocks.add(newIds[i])
     }
-    streamer.subscribe(newIds, "ltpc");
+    streamer.subscribe(newIds, "full");
     console.log("subscribe to stocks in", activeStocks);
 }
 catch(err){
@@ -55,7 +55,9 @@ streamer.on("message", async (data: Buffer) => {
     try {
         const message = data.toString("utf-8");
         const parsedMessage = JSON.parse(message);
-
+            console.log(
+            JSON.stringify(parsedMessage, null, 2)
+        );
         if (!parsedMessage.feeds) return;
 
         for (const [instrumentKey, feed] of Object.entries(parsedMessage.feeds)) {

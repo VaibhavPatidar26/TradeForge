@@ -1,10 +1,12 @@
 import { create } from "zustand";
+import axios from "axios";
 
 interface Holding {
     id: string;
     stockId: string;
     quantity: number;
-    averagePrice: number;
+    avgPrice: number;
+    lastPrice?: number;
 
     stock: {
         instrument_key: string;
@@ -19,7 +21,7 @@ interface PortfolioStore {
     isLoading: boolean;
     error: string | null;
 
-    fetchPortfolio: (token: string) => Promise<void>;
+    fetchPortfolio: (token: string) => Promise<Holding[] | null>;
     clearPortfolio: () => void;
     setHoldings: (holdings: Holding[]) => void;
 }
@@ -30,52 +32,60 @@ const usePortfolioStore = create<PortfolioStore>(function (set) {
         isLoading: false,
         error: null,
 
-        fetchPortfolio: async function (token: string) {
+        fetchPortfolio: async function (token: string): Promise<Holding[] | null> {
             set({
                 isLoading: true,
                 error: null
             });
 
             try {
-                const response = await fetch(
-                    "http://localhost:3000/api/search/portfolio",
+                const response: any = await axios.get(
+                    "http://localhost:3000/api/search/fetchportfolio",
                     {
-                        method: "GET",
                         headers: {
-                            Authorization: `Bearer ${token}`,
-                            "Content-Type": "application/json"
+                            Authorization: `Bearer ${token}`
                         }
                     }
                 );
 
-                const data = await response.json();
+                const data: any = response.data;
 
-                if (!response.ok) {
-                    throw new Error(
-                        data.message || "Failed to fetch portfolio"
-                    );
+                if (data.success === false) {
+                    console.log("unable to fetch portfolio");
+
+                    set({
+                        isLoading: false
+                    });
+
+                    return null;
                 }
 
+                const portfolio: Holding[] = data.portfolio;
+
                 set({
-                    holdings: data.portfolio,
+                    holdings: portfolio,
                     isLoading: false
                 });
+
+                return portfolio;
 
             } catch (err: any) {
                 set({
                     error: err.message || "Error fetching portfolio",
                     isLoading: false
                 });
+
+                return null;
             }
         },
 
-        setHoldings: function (holdings: Holding[]) {
+        setHoldings: function (holdings: Holding[]): void {
             set({
                 holdings: holdings
             });
         },
 
-        clearPortfolio: function () {
+        clearPortfolio: function (): void {
             set({
                 holdings: [],
                 error: null

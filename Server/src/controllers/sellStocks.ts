@@ -4,10 +4,11 @@ import redis from "../redis/client.js";
 
 async function sellStock(req: Request, res: Response) {
     try {
-        const { userId, assetId, quantity } = req.body;
+        const userId = req.userId || req.body.userId;
+        const { stockId, quantity } = req.body;
 
         // . Validate fields
-        if (!userId || !assetId || !quantity) {
+        if (!userId || !stockId || !quantity) {
             return res.status(400).json({
                 message: "All fields are required",
                 success: false
@@ -25,13 +26,13 @@ async function sellStock(req: Request, res: Response) {
         }
 
         // Find asset
-        const asset = await prisma.asset.findUnique({
+        const stock = await prisma.stocks.findUnique({
             where: {
-                id: assetId
+                instrument_key:stockId
             }
         });
 
-        if (!asset) {
+        if (!stock) {
             return res.status(404).json({
                 message: "Asset not found",
                 success: false
@@ -39,7 +40,7 @@ async function sellStock(req: Request, res: Response) {
         }
 
         // Get current price from Redis
-        const currentPrice = await redis.get(asset.symbol);
+        const currentPrice = await redis.get(stock.instrument_key);
 
         if (!currentPrice) {
             return res.status(400).json({
@@ -76,17 +77,17 @@ async function sellStock(req: Request, res: Response) {
             });
         }
 
-        // Find holding
-        const holding = await prisma.holding.findUnique({
+        // Find holdings
+        const holdings = await prisma.holding.findUnique({
             where: {
-                userId_assetId: {
+                userId_stockId: {
                     userId,
-                    assetId
+                    stockId
                 }
             }
         });
 
-        if (!holding) {
+        if (!holdings) {
             return res.status(404).json({
                 message: "User doesn't hold this asset",
                 success: false
@@ -94,7 +95,7 @@ async function sellStock(req: Request, res: Response) {
         }
 
         //Check holding quantity
-        const oldQuantity = Number(holding.quantity);
+        const oldQuantity = Number(holdings.quantity);
 
         if (oldQuantity < qty) {
             return res.status(400).json({
@@ -123,7 +124,7 @@ async function sellStock(req: Request, res: Response) {
 
                 await tx.holding.delete({
                     where: {
-                        id: holding.id
+                        id: holdings.id
                     }
                 });
 
@@ -131,7 +132,7 @@ async function sellStock(req: Request, res: Response) {
 
                 await tx.holding.update({
                     where: {
-                        id: holding.id
+                        id: holdings.id
                     },
                     data: {
                         quantity: newQuantity
@@ -148,7 +149,7 @@ async function sellStock(req: Request, res: Response) {
                     executedPrice: price,
                     total: total,
                     userId,
-                    assetId
+                    stockId
                 }
             });
             // Create transaction
@@ -159,7 +160,7 @@ async function sellStock(req: Request, res: Response) {
                     price: price,
                     total: total,
                     userId,
-                    assetId,
+                    stockId,
                     orderId: newOrder.id
                 }
             });

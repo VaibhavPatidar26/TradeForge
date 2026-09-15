@@ -1,5 +1,6 @@
 import { useStockStore } from "../../store/stockStore";
 import { useWatchlistStore } from "../../store/watchListStore";
+import { usePriceStore } from "../../store/priceStore";
 
 type Stock = {
     instrument_key: string;
@@ -26,7 +27,7 @@ export default function StockCard({ stock, onAdd, onRemove, isWatchlistView = fa
 
 
     const watchlist = useWatchlistStore((state) => state.watchlist);
-    const prices = useWatchlistStore((state) => state.prices);
+    const prices = usePriceStore((state) => state.prices);
 
     const currentPrice = stock?.instrument_key ? prices[stock.instrument_key] : undefined;
 

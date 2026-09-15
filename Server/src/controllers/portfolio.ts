@@ -2,7 +2,11 @@ import { Request, Response } from "express";
 import prisma from "../lib/prisma.js";
 
 export async function fetchPortfolio(req: any, res: any) {
-    const { userId } = req.body;
+    
+    const  userId  = req.userId;
+    try{
+
+    
     if (!userId) {
         return res.status(401).json({
             message: "invalid user",
@@ -15,6 +19,9 @@ export async function fetchPortfolio(req: any, res: any) {
     const userCurrentHoldings = await prisma.holding.findMany({
         where: {
             userId: userId
+        },
+        include:{
+           stock:true 
         }
     })
 
@@ -35,7 +42,15 @@ export async function fetchPortfolio(req: any, res: any) {
     return res.status(200).json({
         message: "Portfolio fetched successfully",
         success: true,
-        portfolio: OwnedStocks
+        portfolio: userCurrentHoldings
     });
 
+}
+catch(err){
+    console.log(err);
+    return res.status(500).json({
+        message: "server failed",
+            success: false
+    })
+}
 }

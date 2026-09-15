@@ -1,12 +1,12 @@
 import { useEffect } from "react";
 import { useAuthStore } from "../store/authStore";
-import { useWatchlistStore } from "../store/watchListStore";
+import { usePriceStore } from "../store/priceStore";
 
 function useWebSocket() {
     const token = useAuthStore(function(state){
         return state.token;
     })  
-    const updatePrice = useWatchlistStore(function(state){
+    const updatePrice = usePriceStore(function(state){
         return state.updatePrice;
     })
     useEffect(function () {

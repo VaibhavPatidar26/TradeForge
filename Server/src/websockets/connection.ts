@@ -37,7 +37,7 @@ export default async function startWebSocketServer() {
 
             console.log("MESSAGE OBJECT:", message);
             console.log("MESSAGE TYPE:", message.type);
-
+            
             if (message.type === "auth_connection") {
 
                 const token = message.token;
@@ -93,13 +93,33 @@ export default async function startWebSocketServer() {
                     );
 
                 } catch (error) {
-
+ 
                     console.log("Invalid token", error);
 
                     ws.close();
                 }
             }
+
+//------------------------------------------------------------------------------
+
+
+           if (message.type == "CANDLE_STICK") {
+
+    const instrumentKey = message.instrumentKey;
+
+    // fetch historical data using instrumentKey
+
+    ws.send(JSON.stringify({
+        type: "SENDING_CANDLE_DATA",
+        instrumentKey: instrumentKey,
+        candles: candles
+    }));
+}
+
+
+
         });
+
 
         ws.on("close", function () {
 
