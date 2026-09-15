@@ -33,10 +33,10 @@ export const useStockStore = create<StockStore>(function (set) {
     return {
         stock: null,
 
-        chartUnit: "days",
-        chartInterval: 1,
-        fromDate: "",
-        toDate: "",
+        chartUnit: "minutes",
+        chartInterval: 5,
+        fromDate: "2026-08-15",
+        toDate: "2026-09-15",
 
         setStock: function (stock) {
             set({
