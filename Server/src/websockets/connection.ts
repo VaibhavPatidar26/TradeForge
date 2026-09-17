@@ -136,6 +136,34 @@ catch(err){
     console.log(err);
 }   
 }
+//--------------------------------------------------------------------------------------
+
+           if (message.type == "FETCH_MORE_CANDLES") {
+try{
+    const instrumentKey = message.instrument_key;
+    const candleDuration = message.candleDuration;
+    const to_date = message.to_date;
+    const from_date = message.from_date;
+    const unit = message.unit;
+
+    const candles = await fetchHistChart(
+        instrumentKey,
+        unit,
+        candleDuration,
+        to_date,
+        from_date
+    );
+
+    ws.send(JSON.stringify({
+        type: "MORE_CANDLES_DATA",
+        instrumentKey: instrumentKey,
+        candles: candles
+    }));
+}
+catch(err){
+    console.log(err);
+}
+}
 
 
 

@@ -1,6 +1,8 @@
 
 import { create } from "zustand";
 
+
+
 type Stock = {
     instrument_key: string;
     name: string;
@@ -14,7 +16,7 @@ type StockStore = {
     stock: Stock | null;
 
     chartUnit: string;
-    chartInterval: number;
+    singleCandleDuration: number;
     fromDate: string;
     toDate: string;
 
@@ -22,21 +24,40 @@ type StockStore = {
     clearStock: () => void;
 
     setChartConfig: (
-        unit: string,
-        interval: number,
+        chartUnit: string,
+        singleCandleDuration: number,
         fromDate: string,
         toDate: string
     ) => void;
 };
 
+function getDefaultFromDate() {
+
+    const date = new Date();
+
+    date.setFullYear(date.getFullYear() - 2);
+
+    return date.toISOString().split("T")[0];
+}
+
+function getDefaultToDate() {
+    const date = new Date();
+    return date.toISOString().split("T")[0];
+}
+
 export const useStockStore = create<StockStore>(function (set) {
+
     return {
+
         stock: null,
 
+        // Default chart: 3-minute candles
         chartUnit: "minutes",
-        chartInterval: 5,
-        fromDate: "2026-08-15",
-        toDate: "2026-09-15",
+        singleCandleDuration: 5,
+
+        // Previous complete 1 year
+        fromDate: getDefaultFromDate(),
+        toDate: getDefaultToDate(),
 
         setStock: function (stock) {
             set({
@@ -51,19 +72,18 @@ export const useStockStore = create<StockStore>(function (set) {
         },
 
         setChartConfig: function (
-            unit,
-            interval,
+            chartUnit,
+            singleCandleDuration,
             fromDate,
             toDate
         ) {
             set({
-                chartUnit: unit,
-                chartInterval: interval,
+                chartUnit: chartUnit,
+                singleCandleDuration: singleCandleDuration,
                 fromDate: fromDate,
                 toDate: toDate
             });
         }
     };
 });
-
 

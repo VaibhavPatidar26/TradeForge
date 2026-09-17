@@ -31,8 +31,8 @@ return (
         <SidePanel />
         
         {/* Main Charting/Trading Interface (Center Content) */}
-        <div className="flex-1 overflow-y-auto p-4 text-white flex flex-col">
-          {/* Your charts and middle content will go here */}
+        <div className="flex-1 text-white flex flex-col overflow-hidden">
+          {/* Chart fills all available space */}
           <Chart></Chart>
         </div>
         

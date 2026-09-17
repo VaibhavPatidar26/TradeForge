@@ -20,42 +20,42 @@ const streamer = new UpstoxClient.MarketDataStreamerV3();
 const activeStocks = new Set<string>();
 
 
-export async function subscribeToStocks(idForLive:string[]){
-try{
+export async function subscribeToStocks(idForLive: string[]) {
+    try {
 
 
-    const newIds = idForLive.filter((ids)=>!activeStocks.has(ids))
-    if(newIds.length===0) return;
+        const newIds = idForLive.filter((ids) => !activeStocks.has(ids))
+        if (newIds.length === 0) return;
 
 
-    for(let i=0;i<newIds.length;i++){
-        activeStocks.add(newIds[i])
+        for (let i = 0; i < newIds.length; i++) {
+            activeStocks.add(newIds[i])
+        }
+        streamer.subscribe(newIds, "ltpc");
+        console.log("subscribe to stocks in", activeStocks);
     }
-    streamer.subscribe(newIds, "full");
-    console.log("subscribe to stocks in", activeStocks);
-}
-catch(err){
-    console.log(err);
-}
+    catch (err) {
+        console.log(err);
+    }
 }
 
 
 streamer.on("open", () => {
     console.log("Connected to Upstox");
 
-   if(activeStocks.size>0){
-    subscribeToStocks(Array.from(activeStocks));
-   }
-   else{
-    console.log("no stocks to show live feed");
-   }
+    if (activeStocks.size > 0) {
+        subscribeToStocks(Array.from(activeStocks));
+    }
+    else {
+        console.log("no stocks to show live feed");
+    }
 
 });
 streamer.on("message", async (data: Buffer) => {
     try {
         const message = data.toString("utf-8");
         const parsedMessage = JSON.parse(message);
-            console.log(
+        console.log(
             JSON.stringify(parsedMessage, null, 2)
         );
         if (!parsedMessage.feeds) return;
