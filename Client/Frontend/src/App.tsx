@@ -1,7 +1,8 @@
 import Landing from './pages/Landing';
-import { Route, Routes } from 'react-router'
+import { Route, Routes } from 'react-router-dom';
 import Login from './pages/Login';
 import SignUp from './pages/SignUp';
+import VerifyOtp from './pages/VerifyOtp';
 import Dashboard from './pages/Dashboard';
 import MainLayout from './components/layout/MainLayout';
 
@@ -13,6 +14,7 @@ function App() {
      //no navbar
       <Route path="/login" element={<Login />} />
       <Route path="/signup" element={<SignUp />} />
+      <Route path="/verify-otp" element={<VerifyOtp />} />
 
      //navbar
       <Route element={<MainLayout />}>

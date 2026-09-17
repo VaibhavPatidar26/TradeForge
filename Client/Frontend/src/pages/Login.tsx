@@ -11,7 +11,6 @@ export default function Login() {
     const [showPassword, setShowPassword] = useState(false);
 
     const [errorMsg, setErrorMsg] = useState<string>("");
-    const { login } = useAuthStore();
     const navigate = useNavigate();
 
     useEffect(() => {
@@ -27,8 +26,7 @@ export default function Login() {
         try {
             const data = await LoginApi(Email, Password);
             if (data.success) {
-                login(data.token, data.refreshToken, data.user.id);
-                navigate("/dashboard");
+                navigate("/verify-otp", { state: { email: Email } });
             } else {
                 setErrorMsg(data.message || "Login failed");
             }
