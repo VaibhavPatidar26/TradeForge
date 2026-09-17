@@ -4,7 +4,7 @@ import prisma from "../lib/prisma.js";
 
 const url = "https://assets.upstox.com/market-quote/instruments/exchange/NSE.json.gz";
 
-export async function seedStocks() {
+async function seedStocks() {
     const response = await axios.get(url, {
         responseType: "arraybuffer",
     });
@@ -61,3 +61,4 @@ export async function seedStocks() {
 
     console.log(instruments[0]);
 }
+seedStocks();

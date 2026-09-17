@@ -80,17 +80,28 @@ enum OrderSide {
 
 enum OrderStatus {
   COMPLETED
+  PENDING
+  OPEN
   REJECTED
+}
+
+enum OrderType{
+  MARKET
+  LIMIT
+  GTT
 }
 
 model Order {
   id            String      @id @default(uuid())
+
   side          OrderSide
   status        OrderStatus
+  orderType     OrderType
 
   quantity      Decimal
-  executedPrice Decimal
-  total         Decimal
+  limitPrice    Decimal?
+  executedPrice Decimal?
+  total         Decimal?
 
   userId  String
   stockId String

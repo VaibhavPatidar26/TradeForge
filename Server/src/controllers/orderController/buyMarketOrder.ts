@@ -1,8 +1,8 @@
 import { Request, Response } from "express";
-import prisma from "../lib/prisma.js";
-import redis from "../redis/client.js";
+import prisma from "../../lib/prisma.js";
+import redis from "../../redis/client.js";
 
-export async function buyAsset(req: Request, res: Response) {
+export async function buyMarketOrder(req: Request, res: Response) {
     try {
         const userId = req.userId;
         const { stockId, quantity } = req.body;
