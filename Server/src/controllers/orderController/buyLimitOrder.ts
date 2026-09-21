@@ -2,201 +2,195 @@ import { Request, Response } from "express";
 import prisma from "../../lib/prisma.js";
 import redis from "../../redis/client.js";
 
+// ─────────────────────────────────────────────────────────────────────────────
+//  BUY LIMIT ORDER
+//
+//  Flow:
+//  1. Validate input.
+//  2. Fetch stock & current market price from Redis.
+//  3. Check user has enough balance for (limitPrice × quantity).
+//  4. Lock (deduct) that amount immediately so the user cannot spend it elsewhere.
+//  5a. If market price is already <= limitPrice → execute the order right now.
+//  5b. Otherwise → create an OPEN order; the worker executes it later when
+//      the market dips to the limit price.
+// ─────────────────────────────────────────────────────────────────────────────
 
 async function BuyLimitOrder(req: Request, res: Response) {
 
     const { stockId, quantity, userRequiredPrice } = req.body;
     const userId = req.userId;
 
+    // 1️⃣  Basic validation
     if (!stockId || !quantity || !userId || !userRequiredPrice) {
         return res.status(400).json({
-            message: "Stock ID, quantity and required price are required"
+            message: "stockId, quantity and userRequiredPrice are required"
+        });
+    }
+
+    const qty = Number(quantity);
+    const limitPrice = Number(userRequiredPrice);
+
+    if (qty <= 0 || limitPrice <= 0) {
+        return res.status(400).json({
+            message: "quantity and userRequiredPrice must be positive numbers"
         });
     }
 
     try {
 
-        const user = await prisma.user.findUnique({
-            where: {
-                id: userId
-            }
+        // 2️⃣  Make sure the stock exists
+        const stock = await prisma.stocks.findUnique({
+            where: { instrument_key: stockId }
         });
 
-        if (!user) {
-            return res.status(404).json({
-                message: "User not found"
-            });
+        if (!stock) {
+            return res.status(404).json({ message: "Stock not found" });
         }
 
-        const currentStock = await prisma.stocks.findUnique({
-            where: {
-                instrument_key: stockId
-            }
-        });
-
-        if (!currentStock) {
-            return res.status(404).json({
-                message: "Stock not found"
-            });
+        // 3️⃣  Get current market price from Redis
+        const redisPrice = await redis.get(stock.instrument_key);
+        if (!redisPrice) {
+            return res.status(503).json({ message: "Live price unavailable" });
         }
+        const currentMarketPrice = Number(redisPrice);
 
-        const currentPrice = Number(
-            await redis.get(currentStock.instrument_key)
-        );
+        // Amount to lock = limitPrice × qty
+        // (user's worst‑case cost at the price they chose)
+        const lockedAmount = limitPrice * qty;
 
-        if (!currentPrice) {
-            return res.status(503).json({
-                message: "Current price unavailable"
-            });
-        }
+        // ─────────────────────────────────────────────────────────────────────
+        //  Run everything inside a single Prisma transaction so the
+        //  balance deduction and order creation are atomic.
+        // ─────────────────────────────────────────────────────────────────────
+        const result = await prisma.$transaction(async (tx) => {
 
-        /*
-            BUY LIMIT ORDER
+            // 4️⃣  Fetch user & verify balance
+            const user = await tx.user.findUnique({ where: { id: userId } });
+            if (!user) throw new Error("User not found");
 
-            If current price is less than or equal to
-            user's required price, the order can execute immediately.
-
-            Example:
-
-            Current Price = 350
-            Required Price = 370
-
-            350 <= 370
-            -> Execute
-        */
-
-        if (userRequiredPrice >= currentPrice) {
-
-            const totalAmountNeeded =
-                currentPrice * Number(quantity);
-
-            if (Number(user.balance) < totalAmountNeeded) {
-                return res.status(400).json({
-                    message: "Insufficient balance"
-                });
+            if (Number(user.balance) < lockedAmount) {
+                throw new Error("Insufficient balance");
             }
 
-            await prisma.$transaction(async function (tx) {
+            // 🔒 Lock the balance immediately
+            await tx.user.update({
+                where: { id: userId },
+                data: { balance: { decrement: lockedAmount } }
+            });
 
+            // 5a ─ Immediate execution path ───────────────────────────────────
+            //  Market price is already at or below the user's limit →
+            //  fill right now at the current market price.
+            if (currentMarketPrice <= limitPrice) {
+
+                const executedTotal = currentMarketPrice * qty;
+
+                // If market is cheaper than the limit price, refund the difference
+                const refund = lockedAmount - executedTotal;
+
+                // Update or create holding
                 const holding = await tx.holding.findUnique({
                     where: {
-                        userId_stockId: {
-                            userId: userId,
-                            stockId: stockId
-                        }
+                        userId_stockId: { userId, stockId }
                     }
                 });
 
-                if (!holding) {
-
-                    await tx.holding.create({
-                        data: {
-                            userId: userId,
-                            stockId: stockId,
-                            quantity: quantity,
-                            avgPrice: currentPrice
-                        }
-                    });
-
-                } else {
-
-                    const oldQuantity = Number(holding.quantity);
-                    const oldAvgPrice = Number(holding.avgPrice);
-
-                    const newQuantity =
-                        oldQuantity + Number(quantity);
-
-                    const newAvgPrice =
-                        (
-                            oldQuantity * oldAvgPrice +
-                            Number(quantity) * currentPrice
-                        ) / newQuantity;
+                if (holding) {
+                    const oldQty = Number(holding.quantity);
+                    const oldAvg = Number(holding.avgPrice);
+                    const newQty = oldQty + qty;
+                    const newAvg = (oldQty * oldAvg + qty * currentMarketPrice) / newQty;
 
                     await tx.holding.update({
-                        where: {
-                            id: holding.id
-                        },
+                        where: { id: holding.id },
+                        data: { quantity: newQty, avgPrice: newAvg }
+                    });
+                } else {
+                    await tx.holding.create({
                         data: {
-                            quantity: newQuantity,
-                            avgPrice: newAvgPrice
+                            userId,
+                            stockId,
+                            quantity: qty,
+                            avgPrice: currentMarketPrice
                         }
                     });
                 }
 
-                await tx.user.update({
-                    where: {
-                        id: userId
-                    },
-                    data: {
-                        balance: {
-                            decrement: totalAmountNeeded
-                        }
-                    }
-                });
+                // Refund price difference if any
+                if (refund > 0) {
+                    await tx.user.update({
+                        where: { id: userId },
+                        data: { balance: { increment: refund } }
+                    });
+                }
 
-                await tx.order.create({
+                // Create order record (COMPLETED immediately)
+                const newOrder = await tx.order.create({
                     data: {
-                        userId: userId,
-                        stockId: stockId,
-                        quantity: quantity,
-                        orderType: "LIMIT",
                         side: "BUY",
                         status: "COMPLETED",
-                        limitPrice: userRequiredPrice,
-                        executedPrice: currentPrice,
-                        total:totalAmountNeeded
+                        orderType: "LIMIT",
+                        quantity: qty,
+                        limitPrice,
+                        executedPrice: currentMarketPrice,
+                        total: executedTotal,
+                        userId,
+                        stockId
                     }
                 });
 
-            });
+                // Create transaction record
+                await tx.transaction.create({
+                    data: {
+                        type: "BUY",
+                        quantity: qty,
+                        price: currentMarketPrice,
+                        total: executedTotal,
+                        userId,
+                        stockId,
+                        orderId: newOrder.id
+                    }
+                });
 
-            return res.status(201).json({
-                message: "Buy limit order executed successfully"
-            });
+                return { order: newOrder, immediate: true };
+            }
 
-        } else {
-
-            /*
-                Current price is greater than user's required price.
-
-                Example:
-
-                Current Price = 350
-                Required Price = 330
-
-                330 >= 350 -> false
-
-                Therefore the order should remain OPEN
-                until the market price reaches 330.
-            */
-
-            const order = await prisma.order.create({
+            // 5b ─ Deferred execution path ─────────────────────────────────────
+            //  Market price is above the limit → place the order as OPEN.
+            //  The limit order worker will execute it when the price dips.
+            const newOrder = await tx.order.create({
                 data: {
-                    userId: userId,
-                    stockId: stockId,
-                    quantity: quantity,
-                    orderType: "LIMIT",
                     side: "BUY",
                     status: "OPEN",
-                    limitPrice: userRequiredPrice
+                    orderType: "LIMIT",
+                    quantity: qty,
+                    limitPrice,
+                    userId,
+                    stockId
                 }
             });
 
+            return { order: newOrder, immediate: false };
+        });
+
+        if (result.immediate) {
             return res.status(201).json({
-                message: "Buy limit order placed successfully",
-                order: order
+                message: "Buy limit order executed immediately",
+                order: result.order
             });
         }
 
-    } catch (error) {
+        return res.status(201).json({
+            message: `Buy limit order placed. Will execute when price reaches ₹${limitPrice}`,
+            order: result.order
+        });
 
-        console.log("error while buy limit order:", error);
-
-        return res.status(500).json({
-            message: "Internal server error"
+    } catch (error: any) {
+        console.error("[BuyLimitOrder] Error:", error);
+        return res.status(400).json({
+            message: error.message || "Failed to place buy limit order"
         });
     }
 }
 
-
-export default BuyLimitOrder;
+export default BuyLimitOrder;  

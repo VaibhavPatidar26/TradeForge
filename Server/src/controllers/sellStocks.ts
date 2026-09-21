@@ -145,6 +145,7 @@ async function sellStock(req: Request, res: Response) {
                 data: {
                     side: "SELL",
                     status: "COMPLETED",
+                    orderType: "MARKET",
                     quantity: qty,
                     executedPrice: price,
                     total: total,
@@ -152,6 +153,7 @@ async function sellStock(req: Request, res: Response) {
                     stockId
                 }
             });
+
             // Create transaction
             await tx.transaction.create({
                 data: {

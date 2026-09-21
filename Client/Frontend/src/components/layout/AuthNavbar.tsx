@@ -1,17 +1,33 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { Bell, Search, User, ChevronDown } from "lucide-react";
 import { useAuthStore } from "../../store/authStore";
+import { useUserStore } from "../../store/userStore";
 
 export default function AuthNavbar() {
-    const logout = useAuthStore(function(state){
-           return state.logout
-        })
+    const logout = useAuthStore((state) => state.logout);
+    const token = useAuthStore((state) => state.token);
+    const user = useUserStore((state) => state.user);
+    const balance = useUserStore((state) => state.balance);
+    const fetchUser = useUserStore((state) => state.fetchUser);
+    const clearUser = useUserStore((state) => state.clearUser);
+
     const [profileClicked, setProfileClicked] = useState(false);
     const navigate = useNavigate();
 
+    useEffect(() => {
+        if (token) {
+            fetchUser(token);
+        }
+    }, [token, fetchUser]);
+
     function LogoutHandler() {
+        clearUser();
         logout();
+    }
+
+    function fmt(n: number) {
+        return n.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     }
 
     return (
@@ -59,7 +75,9 @@ export default function AuthNavbar() {
                     {/* Balance */}
                     <div className="hidden text-sm xl:block">
                         <span className="mr-2 text-zinc-500">Balance</span>
-                        <span className="font-medium tabular-nums">₹50,000</span>
+                        <span className="font-semibold tabular-nums text-emerald-400">
+                            {balance != null ? `₹${fmt(balance)}` : "—"}
+                        </span>
                     </div>
 
                     {/* Notifications */}
@@ -81,25 +99,31 @@ export default function AuthNavbar() {
                         aria-label="Profile menu"
                         className="flex items-center gap-1.5 rounded-full py-1 pl-1 pr-2 transition-colors hover:bg-zinc-800/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/60 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0f0f0f]"
                     >
-                        <span className="flex h-7 w-7 items-center justify-center rounded-full bg-zinc-800">
-                            <User size={15} />
+                        <span className="flex h-7 w-7 items-center justify-center rounded-full bg-zinc-800 text-xs font-semibold text-gray-200">
+                            {user?.name ? user.name.charAt(0).toUpperCase() : <User size={15} />}
                         </span>
                         <ChevronDown size={14} className="hidden text-zinc-500 sm:block" />
                     </button>
 
                     {profileClicked ? (
-                        <div className="absolute right-0 top-full z-50 mt-2 w-48 rounded-xl border border-[#252b33] bg-[#11161c] shadow-2xl shadow-black/60 overflow-hidden">
+                        <div className="absolute right-0 top-full z-50 mt-2 w-56 rounded-xl border border-[#252b33] bg-[#11161c] shadow-2xl shadow-black/60 overflow-hidden">
                             <div className="px-4 py-3 border-b border-[#252b33]">
-                                <p className="text-sm font-medium text-gray-200">
-                                    Account
+                                <p className="text-sm font-semibold text-gray-200 truncate">
+                                    {user?.name || "Account"}
                                 </p>
-                                <p className="text-xs text-gray-500 mt-1">
-                                    Manage your account
+                                <p className="text-xs text-gray-400 mt-0.5 truncate">
+                                    {user?.email || "Signed in"}
                                 </p>
+                                <div className="mt-2 pt-2 border-t border-[#1f2630] flex items-center justify-between text-xs">
+                                    <span className="text-gray-500">Cash:</span>
+                                    <span className="font-medium text-emerald-400 tabular-nums">
+                                        {balance != null ? `₹${fmt(balance)}` : "—"}
+                                    </span>
+                                </div>
                             </div>
                             <button
                                 onClick={LogoutHandler}
-                                className="w-full px-4 py-3 text-left text-sm text-gray-400 hover:bg-[#1a2028] hover:text-red-400 transition-colors"
+                                className="w-full px-4 py-2.5 text-left text-xs font-medium text-red-400 hover:bg-[#1a2028] transition-colors"
                             >
                                 Logout
                             </button>

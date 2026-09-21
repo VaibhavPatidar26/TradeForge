@@ -66,6 +66,15 @@ streamer.on("message", async (data: Buffer) => {
             if (price !== undefined) {
                 await setPrice(instrumentKey, price);
                 broadcastPrice(instrumentKey, price);
+
+              await redis.publish("limit_price_update",JSON.stringify({
+                instrumentKey,
+                price
+              }))
+
+
+
+
             }
         }
 

@@ -28,3 +28,23 @@ export function broadcastPrice(
         }
     }
 }
+
+export function broadcastExecution(
+    userId: string,
+    payload: {
+        side: "BUY" | "SELL";
+        stockId: string;
+        quantity: number;
+        price: number;
+        orderId: string;
+    }
+) {
+    for (const [socket, uid] of mp) {
+        if (uid === userId && socket.readyState === WebSocket.OPEN) {
+            socket.send(JSON.stringify({
+                type: "LIMIT_ORDER_EXECUTED",
+                ...payload
+            }));
+        }
+    }
+}

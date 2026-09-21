@@ -5,6 +5,7 @@ import { login, register } from "../controllers/authentication/authentication.js
 import { verifyOtp } from "../controllers/authentication/verifyOtp.js";
 import { resendOtp } from "../controllers/authentication/resendOtp.js";
 import { loginSchema, registerScema } from "../zodSchemas/authSchema.js";
+import { getUserProfile } from "../controllers/getUserProfile.js";
 const Router = express.Router();
 
 const userRouter = Router;
@@ -13,6 +14,7 @@ userRouter.post('/login', validate(loginSchema), login);
 userRouter.post('/register', validate(registerScema), register);
 userRouter.post('/verify-otp', verifyOtp);
 userRouter.post('/resend-otp', resendOtp);
+userRouter.get('/profile', isLoggedin, getUserProfile);
 // userRouter.post('/refresh',refresh);
 
 export default userRouter;

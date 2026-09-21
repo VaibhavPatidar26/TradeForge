@@ -1,14 +1,12 @@
 import { useEffect } from "react";
 import { useAuthStore } from "../store/authStore";
 import { usePriceStore } from "../store/priceStore";
+import { useOrdersStore } from "../store/ordersStore";
+import usePortfolioStore from "../store/portFolioStore";
 
 function useWebSocket() {
-    const token = useAuthStore(function(state){
-        return state.token;
-    })  
-    const updatePrice = usePriceStore(function(state){
-        return state.updatePrice;
-    })
+    const token = useAuthStore((s) => s.token);
+
     useEffect(function () {
         if (!token) return;
 
@@ -16,31 +14,45 @@ function useWebSocket() {
 
         ws.onopen = function () {
             console.log("Connected from frontend");
-            
-            ws.send(JSON.stringify({
-                token: token,
-                type: "auth_connection"
-            }));
+            ws.send(JSON.stringify({ token, type: "auth_connection" }));
         };
 
         ws.onmessage = function (event) {
             try {
                 const message = JSON.parse(event.data);
 
+                // ── Live price tick ──────────────────────────────────────
                 if (message.type === "PRICE_UPDATE") {
-                    updatePrice(message.instrumentKey, message.price);
+                    usePriceStore.getState().updatePrice(message.instrumentKey, message.price);
                 }
-            } catch (err) {
-                // Safely ignore non-JSON messages (like welcome string)
+
+                // ── Limit order executed by the worker ───────────────────
+                if (message.type === "LIMIT_ORDER_EXECUTED") {
+                    useOrdersStore.getState().updateOrderStatus(message.orderId, "COMPLETED", message.price);
+                    usePortfolioStore.getState().fetchPortfolio(token);
+                    useOrdersStore.getState().fetchTodayOrders(token);
+                    useUserStore.getState().fetchUser(token);
+                }
+
+            } catch (_) {
+                // Safely ignore non-JSON welcome messages
             }
         };
 
-        return function () {
-            ws.close();
+        ws.onerror = function (e) {
+            console.error("WebSocket error:", e);
         };
 
-    }, [token, updatePrice]);
+        return function () {
+            if (ws.readyState === WebSocket.OPEN) {
+                ws.close();
+            } else if (ws.readyState === WebSocket.CONNECTING) {
+                ws.onopen = function () {
+                    ws.close();
+                };
+            }
+        };
+    }, [token]);
 }
 
-
-export default useWebSocket
+export default useWebSocket;

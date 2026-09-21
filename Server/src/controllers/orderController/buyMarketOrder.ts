@@ -131,6 +131,7 @@ export async function buyMarketOrder(req: Request, res: Response) {
                 data: {
                     side: "BUY",
                     status: "COMPLETED",
+                    orderType: "MARKET",
                     quantity: qty,
                     executedPrice: price,
                     total: total,
@@ -138,6 +139,7 @@ export async function buyMarketOrder(req: Request, res: Response) {
                     stockId
                 }
             });
+
 
             // 9. Create transaction
             await tx.transaction.create({

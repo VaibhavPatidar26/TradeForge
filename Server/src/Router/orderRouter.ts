@@ -1,12 +1,23 @@
 import express from "express";
-import  isLoggedin  from "../middlewares/isLoggedIn.js";
+import isLoggedin from "../middlewares/isLoggedIn.js";
 import { buyMarketOrder } from "../controllers/orderController/buyMarketOrder.js";
 import sellStock from "../controllers/sellStocks.js";
-const Router = express.Router();
+import BuyLimitOrder from "../controllers/orderController/buyLimitOrder.js";
+import sellLimitOrder from "../controllers/orderController/sellLimitOrder.js";
+import { getTodayOrders } from "../controllers/orderController/getTodayOrders.js";
 
+const Router = express.Router();
 const orderRouter = Router;
 
+// ── Market Orders ──────────────────────────────────────────────────────────────
 orderRouter.post("/buy/market", isLoggedin, buyMarketOrder);
-orderRouter.post("/sell", isLoggedin, sellStock);
+orderRouter.post("/sell/market", isLoggedin, sellStock);
+
+// ── Limit Orders ───────────────────────────────────────────────────────────────
+orderRouter.post("/buy/limit", isLoggedin, BuyLimitOrder);
+orderRouter.post("/sell/limit", isLoggedin, sellLimitOrder);
+
+// ── Queries ────────────────────────────────────────────────────────────────────
+orderRouter.get("/today", isLoggedin, getTodayOrders);
 
 export { orderRouter };

@@ -438,6 +438,18 @@ export function ChartCanvas({
         const series = chart.addSeries(CandlestickSeries);
         seriesRef.current = series;
 
+        // Auto-resize chart and sync overlay whenever container dimensions change
+        const resizeObserver = new ResizeObserver((entries) => {
+            if (!entries || entries.length === 0) return;
+            const entry = entries[0];
+            const { width, height } = entry.contentRect;
+            if (width > 0 && height > 0 && chartInstanceRef.current) {
+                chartInstanceRef.current.applyOptions({ width, height });
+                syncOverlayDOM();
+            }
+        });
+        resizeObserver.observe(chartContainer.current);
+
         // Sync overlay on pan/zoom
         chart.timeScale().subscribeVisibleLogicalRangeChange(() => {
             syncOverlayDOM();
@@ -582,6 +594,7 @@ export function ChartCanvas({
         };
 
         return () => {
+            resizeObserver.disconnect();
             ws.close();
             chart.remove();
             wsRef.current = null;
