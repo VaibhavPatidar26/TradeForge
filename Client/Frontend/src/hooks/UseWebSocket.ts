@@ -3,6 +3,7 @@ import { useAuthStore } from "../store/authStore";
 import { usePriceStore } from "../store/priceStore";
 import { useOrdersStore } from "../store/ordersStore";
 import usePortfolioStore from "../store/portFolioStore";
+import { useUserStore } from "../store/userStore";
 
 function useWebSocket() {
     const token = useAuthStore((s) => s.token);

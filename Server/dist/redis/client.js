@@ -1,0 +1,17 @@
+import { createClient } from "redis";
+import express from "express";
+const app = express();
+app.use(express.json());
+const redis = createClient({
+    url: process.env.REDIS_URL
+});
+redis.on("error", (error) => {
+    console.log(error);
+});
+export async function setPrice(instrumentKey, price) {
+    await redis.set(instrumentKey, price);
+    console.log(`Set key=${instrumentKey}, val=${price}`);
+    // await redis.expire(instrumentKey,60);
+}
+export default redis;
+//# sourceMappingURL=client.js.map

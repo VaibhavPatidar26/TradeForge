@@ -5,7 +5,6 @@ import { useOrdersStore } from "../../store/ordersStore";
 import { useAuthStore } from "../../store/authStore";
 import { useUserStore } from "../../store/userStore";
 
-
 const MIN_HEIGHT = 80;
 const DEFAULT_HEIGHT = 140;
 const MAX_VIEWPORT_PERCENT = 0.40; // Max 40% of viewport height
@@ -26,7 +25,10 @@ export default function PositionsPanel() {
     const prices           = usePriceStore((s) => s.prices);
     const orders           = useOrdersStore((s) => s.orders);
     const fetchTodayOrders = useOrdersStore((s) => s.fetchTodayOrders);
+    const cancelOrder      = useOrdersStore((s) => s.cancelOrder);
     const fetchUser        = useUserStore((s) => s.fetchUser);
+
+    const [cancellingId, setCancellingId] = useState<string | null>(null);
 
     useEffect(() => {
         if (token) {
@@ -35,6 +37,18 @@ export default function PositionsPanel() {
             fetchUser(token);
         }
     }, [token, fetchPortfolio, fetchTodayOrders, fetchUser]);
+
+    async function handleCancel(orderId: string) {
+        if (!token) return;
+        setCancellingId(orderId);
+        try {
+            await cancelOrder(token, orderId);
+        } catch (err: any) {
+            console.error("Cancel order error:", err);
+        } finally {
+            setCancellingId(null);
+        }
+    }
 
     // Ensure panelHeight never exceeds 40% viewport height on resize
     useEffect(() => {
@@ -132,7 +146,11 @@ export default function PositionsPanel() {
                     <PositionsTable holdings={holdings} prices={prices} />
                 )}
                 {activeTab === "pending" && (
-                    <PendingTable orders={openOrders} />
+                    <PendingTable
+                        orders={openOrders}
+                        onCancel={handleCancel}
+                        cancellingId={cancellingId}
+                    />
                 )}
             </div>
         </div>
@@ -215,7 +233,15 @@ function PositionsTable({ holdings, prices }: { holdings: any[]; prices: Record<
 }
 
 // ── Pending limit orders table ─────────────────────────────────────────────────
-function PendingTable({ orders }: { orders: any[] }) {
+function PendingTable({
+    orders,
+    onCancel,
+    cancellingId
+}: {
+    orders: any[];
+    onCancel: (orderId: string) => void;
+    cancellingId: string | null;
+}) {
     if (orders.length === 0) {
         return (
             <div className="flex items-center justify-center h-full text-xs text-gray-600">
@@ -233,11 +259,13 @@ function PendingTable({ orders }: { orders: any[] }) {
                     <th className="text-right px-3 py-1.5 font-medium">Qty</th>
                     <th className="text-right px-3 py-1.5 font-medium">Limit Price</th>
                     <th className="text-right px-3 py-1.5 font-medium">Placed</th>
+                    <th className="text-right px-3 py-1.5 font-medium">Action</th>
                 </tr>
             </thead>
             <tbody>
                 {orders.map(function (o) {
                     const isBuy = o.side === "BUY";
+                    const isCancelling = cancellingId === o.id;
                     const time  = new Date(o.createdAt).toLocaleTimeString("en-IN", {
                         hour: "2-digit",
                         minute: "2-digit"
@@ -268,6 +296,15 @@ function PendingTable({ orders }: { orders: any[] }) {
                                 ₹{fmt(Number(o.limitPrice))}
                             </td>
                             <td className="px-3 py-2 text-right text-gray-500 tabular-nums">{time}</td>
+                            <td className="px-3 py-2 text-right">
+                                <button
+                                    onClick={() => onCancel(o.id)}
+                                    disabled={isCancelling}
+                                    className="text-[11px] text-red-400 hover:text-red-300 disabled:opacity-50 px-2 py-0.5 rounded border border-red-900/40 hover:border-red-700 bg-red-950/20 cursor-pointer transition-colors"
+                                >
+                                    {isCancelling ? "Cancelling..." : "Cancel"}
+                                </button>
+                            </td>
                         </tr>
                     );
                 })}

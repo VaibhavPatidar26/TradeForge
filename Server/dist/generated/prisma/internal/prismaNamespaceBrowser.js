@@ -39,7 +39,12 @@ export const JsonNull = runtime.JsonNull;
  */
 export const AnyNull = runtime.AnyNull;
 export const ModelName = {
-    User: 'User'
+    User: 'User',
+    Stocks: 'Stocks',
+    Holding: 'Holding',
+    Order: 'Order',
+    Transaction: 'Transaction',
+    Watchlist: 'Watchlist'
 };
 /*
  * Enums
@@ -56,16 +61,99 @@ export const UserScalarFieldEnum = {
     email: 'email',
     password: 'password',
     balance: 'balance',
+    refreshToken: 'refreshToken',
     createdAt: 'createdAt',
     updatedAt: 'updatedAt'
+};
+export const StocksScalarFieldEnum = {
+    segment: 'segment',
+    name: 'name',
+    exchange: 'exchange',
+    instrument_type: 'instrument_type',
+    instrument_key: 'instrument_key',
+    trading_symbol: 'trading_symbol'
+};
+export const HoldingScalarFieldEnum = {
+    id: 'id',
+    quantity: 'quantity',
+    avgPrice: 'avgPrice',
+    userId: 'userId',
+    stockId: 'stockId',
+    createdAt: 'createdAt',
+    updatedAt: 'updatedAt'
+};
+export const OrderScalarFieldEnum = {
+    id: 'id',
+    side: 'side',
+    status: 'status',
+    orderType: 'orderType',
+    quantity: 'quantity',
+    limitPrice: 'limitPrice',
+    executedPrice: 'executedPrice',
+    total: 'total',
+    userId: 'userId',
+    stockId: 'stockId',
+    createdAt: 'createdAt'
+};
+export const TransactionScalarFieldEnum = {
+    id: 'id',
+    type: 'type',
+    quantity: 'quantity',
+    price: 'price',
+    total: 'total',
+    userId: 'userId',
+    stockId: 'stockId',
+    orderId: 'orderId',
+    createdAt: 'createdAt'
+};
+export const WatchlistScalarFieldEnum = {
+    id: 'id',
+    userId: 'userId',
+    stockId: 'stockId',
+    createdAt: 'createdAt'
 };
 export const SortOrder = {
     asc: 'asc',
     desc: 'desc'
 };
+export const NullsOrder = {
+    first: 'first',
+    last: 'last'
+};
 export const UserOrderByRelevanceFieldEnum = {
+    id: 'id',
     name: 'name',
     email: 'email',
-    password: 'password'
+    password: 'password',
+    refreshToken: 'refreshToken'
+};
+export const StocksOrderByRelevanceFieldEnum = {
+    segment: 'segment',
+    name: 'name',
+    exchange: 'exchange',
+    instrument_type: 'instrument_type',
+    instrument_key: 'instrument_key',
+    trading_symbol: 'trading_symbol'
+};
+export const HoldingOrderByRelevanceFieldEnum = {
+    id: 'id',
+    userId: 'userId',
+    stockId: 'stockId'
+};
+export const OrderOrderByRelevanceFieldEnum = {
+    id: 'id',
+    userId: 'userId',
+    stockId: 'stockId'
+};
+export const TransactionOrderByRelevanceFieldEnum = {
+    id: 'id',
+    userId: 'userId',
+    stockId: 'stockId',
+    orderId: 'orderId'
+};
+export const WatchlistOrderByRelevanceFieldEnum = {
+    id: 'id',
+    userId: 'userId',
+    stockId: 'stockId'
 };
 //# sourceMappingURL=prismaNamespaceBrowser.js.map

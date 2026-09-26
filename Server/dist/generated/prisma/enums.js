@@ -7,5 +7,23 @@
 *
 * 🟢 You can import this file directly.
 */
-export {};
+export const OrderSide = {
+    BUY: 'BUY',
+    SELL: 'SELL'
+};
+export const OrderStatus = {
+    COMPLETED: 'COMPLETED',
+    PENDING: 'PENDING',
+    OPEN: 'OPEN',
+    REJECTED: 'REJECTED'
+};
+export const OrderType = {
+    MARKET: 'MARKET',
+    LIMIT: 'LIMIT',
+    GTT: 'GTT'
+};
+export const TransactionType = {
+    BUY: 'BUY',
+    SELL: 'SELL'
+};
 //# sourceMappingURL=enums.js.map

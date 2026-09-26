@@ -128,6 +128,61 @@ export interface PrismaClient<in LogOpts extends Prisma.LogLevel = never, in out
     get user(): Prisma.UserDelegate<ExtArgs, {
         omit: OmitOpts;
     }>;
+    /**
+     * `prisma.stocks`: Exposes CRUD operations for the **Stocks** model.
+      * Example usage:
+      * ```ts
+      * // Fetch zero or more Stocks
+      * const stocks = await prisma.stocks.findMany()
+      * ```
+      */
+    get stocks(): Prisma.StocksDelegate<ExtArgs, {
+        omit: OmitOpts;
+    }>;
+    /**
+     * `prisma.holding`: Exposes CRUD operations for the **Holding** model.
+      * Example usage:
+      * ```ts
+      * // Fetch zero or more Holdings
+      * const holdings = await prisma.holding.findMany()
+      * ```
+      */
+    get holding(): Prisma.HoldingDelegate<ExtArgs, {
+        omit: OmitOpts;
+    }>;
+    /**
+     * `prisma.order`: Exposes CRUD operations for the **Order** model.
+      * Example usage:
+      * ```ts
+      * // Fetch zero or more Orders
+      * const orders = await prisma.order.findMany()
+      * ```
+      */
+    get order(): Prisma.OrderDelegate<ExtArgs, {
+        omit: OmitOpts;
+    }>;
+    /**
+     * `prisma.transaction`: Exposes CRUD operations for the **Transaction** model.
+      * Example usage:
+      * ```ts
+      * // Fetch zero or more Transactions
+      * const transactions = await prisma.transaction.findMany()
+      * ```
+      */
+    get transaction(): Prisma.TransactionDelegate<ExtArgs, {
+        omit: OmitOpts;
+    }>;
+    /**
+     * `prisma.watchlist`: Exposes CRUD operations for the **Watchlist** model.
+      * Example usage:
+      * ```ts
+      * // Fetch zero or more Watchlists
+      * const watchlists = await prisma.watchlist.findMany()
+      * ```
+      */
+    get watchlist(): Prisma.WatchlistDelegate<ExtArgs, {
+        omit: OmitOpts;
+    }>;
 }
 export declare function getPrismaClientClass(): PrismaClientConstructor;
 //# sourceMappingURL=class.d.ts.map

@@ -5,19 +5,19 @@ import sellStock from "../controllers/sellStocks.js";
 import BuyLimitOrder from "../controllers/orderController/buyLimitOrder.js";
 import sellLimitOrder from "../controllers/orderController/sellLimitOrder.js";
 import { getTodayOrders } from "../controllers/orderController/getTodayOrders.js";
+import { cancelOrder } from "../controllers/orderController/cancelOrder.js";
 
 const Router = express.Router();
 const orderRouter = Router;
 
-// ── Market Orders ──────────────────────────────────────────────────────────────
+//──────────────────────────────────────────────────────────────
 orderRouter.post("/buy/market", isLoggedin, buyMarketOrder);
 orderRouter.post("/sell/market", isLoggedin, sellStock);
-
-// ── Limit Orders ───────────────────────────────────────────────────────────────
+orderRouter.post("/cancel/:orderId",isLoggedin,cancelOrder);
+//───────────────────────────────────────────────────────────────
 orderRouter.post("/buy/limit", isLoggedin, BuyLimitOrder);
 orderRouter.post("/sell/limit", isLoggedin, sellLimitOrder);
-
-// ── Queries ────────────────────────────────────────────────────────────────────
+//─────────────────────────────────────────────────────────────────
 orderRouter.get("/today", isLoggedin, getTodayOrders);
 
 export { orderRouter };

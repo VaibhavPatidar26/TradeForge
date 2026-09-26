@@ -13,28 +13,28 @@ export type AggregateUser = {
     _max: UserMaxAggregateOutputType | null;
 };
 export type UserAvgAggregateOutputType = {
-    id: number | null;
     balance: runtime.Decimal | null;
 };
 export type UserSumAggregateOutputType = {
-    id: number | null;
     balance: runtime.Decimal | null;
 };
 export type UserMinAggregateOutputType = {
-    id: number | null;
+    id: string | null;
     name: string | null;
     email: string | null;
     password: string | null;
     balance: runtime.Decimal | null;
+    refreshToken: string | null;
     createdAt: Date | null;
     updatedAt: Date | null;
 };
 export type UserMaxAggregateOutputType = {
-    id: number | null;
+    id: string | null;
     name: string | null;
     email: string | null;
     password: string | null;
     balance: runtime.Decimal | null;
+    refreshToken: string | null;
     createdAt: Date | null;
     updatedAt: Date | null;
 };
@@ -44,16 +44,15 @@ export type UserCountAggregateOutputType = {
     email: number;
     password: number;
     balance: number;
+    refreshToken: number;
     createdAt: number;
     updatedAt: number;
     _all: number;
 };
 export type UserAvgAggregateInputType = {
-    id?: true;
     balance?: true;
 };
 export type UserSumAggregateInputType = {
-    id?: true;
     balance?: true;
 };
 export type UserMinAggregateInputType = {
@@ -62,6 +61,7 @@ export type UserMinAggregateInputType = {
     email?: true;
     password?: true;
     balance?: true;
+    refreshToken?: true;
     createdAt?: true;
     updatedAt?: true;
 };
@@ -71,6 +71,7 @@ export type UserMaxAggregateInputType = {
     email?: true;
     password?: true;
     balance?: true;
+    refreshToken?: true;
     createdAt?: true;
     updatedAt?: true;
 };
@@ -80,6 +81,7 @@ export type UserCountAggregateInputType = {
     email?: true;
     password?: true;
     balance?: true;
+    refreshToken?: true;
     createdAt?: true;
     updatedAt?: true;
     _all?: true;
@@ -161,11 +163,12 @@ export type UserGroupByArgs<ExtArgs extends runtime.Types.Extensions.InternalArg
     _max?: UserMaxAggregateInputType;
 };
 export type UserGroupByOutputType = {
-    id: number;
+    id: string;
     name: string;
     email: string;
     password: string;
     balance: runtime.Decimal;
+    refreshToken: string | null;
     createdAt: Date;
     updatedAt: Date;
     _count: UserCountAggregateOutputType | null;
@@ -181,13 +184,18 @@ export type UserWhereInput = {
     AND?: Prisma.UserWhereInput | Prisma.UserWhereInput[];
     OR?: Prisma.UserWhereInput[];
     NOT?: Prisma.UserWhereInput | Prisma.UserWhereInput[];
-    id?: Prisma.IntFilter<"User"> | number;
+    id?: Prisma.StringFilter<"User"> | string;
     name?: Prisma.StringFilter<"User"> | string;
     email?: Prisma.StringFilter<"User"> | string;
     password?: Prisma.StringFilter<"User"> | string;
     balance?: Prisma.DecimalFilter<"User"> | runtime.Decimal | runtime.DecimalJsLike | number | string;
+    refreshToken?: Prisma.StringNullableFilter<"User"> | string | null;
     createdAt?: Prisma.DateTimeFilter<"User"> | Date | string;
     updatedAt?: Prisma.DateTimeFilter<"User"> | Date | string;
+    holdings?: Prisma.HoldingListRelationFilter;
+    orders?: Prisma.OrderListRelationFilter;
+    transactions?: Prisma.TransactionListRelationFilter;
+    watchlists?: Prisma.WatchlistListRelationFilter;
 };
 export type UserOrderByWithRelationInput = {
     id?: Prisma.SortOrder;
@@ -195,12 +203,17 @@ export type UserOrderByWithRelationInput = {
     email?: Prisma.SortOrder;
     password?: Prisma.SortOrder;
     balance?: Prisma.SortOrder;
+    refreshToken?: Prisma.SortOrderInput | Prisma.SortOrder;
     createdAt?: Prisma.SortOrder;
     updatedAt?: Prisma.SortOrder;
+    holdings?: Prisma.HoldingOrderByRelationAggregateInput;
+    orders?: Prisma.OrderOrderByRelationAggregateInput;
+    transactions?: Prisma.TransactionOrderByRelationAggregateInput;
+    watchlists?: Prisma.WatchlistOrderByRelationAggregateInput;
     _relevance?: Prisma.UserOrderByRelevanceInput;
 };
 export type UserWhereUniqueInput = Prisma.AtLeast<{
-    id?: number;
+    id?: string;
     email?: string;
     AND?: Prisma.UserWhereInput | Prisma.UserWhereInput[];
     OR?: Prisma.UserWhereInput[];
@@ -208,8 +221,13 @@ export type UserWhereUniqueInput = Prisma.AtLeast<{
     name?: Prisma.StringFilter<"User"> | string;
     password?: Prisma.StringFilter<"User"> | string;
     balance?: Prisma.DecimalFilter<"User"> | runtime.Decimal | runtime.DecimalJsLike | number | string;
+    refreshToken?: Prisma.StringNullableFilter<"User"> | string | null;
     createdAt?: Prisma.DateTimeFilter<"User"> | Date | string;
     updatedAt?: Prisma.DateTimeFilter<"User"> | Date | string;
+    holdings?: Prisma.HoldingListRelationFilter;
+    orders?: Prisma.OrderListRelationFilter;
+    transactions?: Prisma.TransactionListRelationFilter;
+    watchlists?: Prisma.WatchlistListRelationFilter;
 }, "id" | "email">;
 export type UserOrderByWithAggregationInput = {
     id?: Prisma.SortOrder;
@@ -217,6 +235,7 @@ export type UserOrderByWithAggregationInput = {
     email?: Prisma.SortOrder;
     password?: Prisma.SortOrder;
     balance?: Prisma.SortOrder;
+    refreshToken?: Prisma.SortOrderInput | Prisma.SortOrder;
     createdAt?: Prisma.SortOrder;
     updatedAt?: Prisma.SortOrder;
     _count?: Prisma.UserCountOrderByAggregateInput;
@@ -229,71 +248,98 @@ export type UserScalarWhereWithAggregatesInput = {
     AND?: Prisma.UserScalarWhereWithAggregatesInput | Prisma.UserScalarWhereWithAggregatesInput[];
     OR?: Prisma.UserScalarWhereWithAggregatesInput[];
     NOT?: Prisma.UserScalarWhereWithAggregatesInput | Prisma.UserScalarWhereWithAggregatesInput[];
-    id?: Prisma.IntWithAggregatesFilter<"User"> | number;
+    id?: Prisma.StringWithAggregatesFilter<"User"> | string;
     name?: Prisma.StringWithAggregatesFilter<"User"> | string;
     email?: Prisma.StringWithAggregatesFilter<"User"> | string;
     password?: Prisma.StringWithAggregatesFilter<"User"> | string;
     balance?: Prisma.DecimalWithAggregatesFilter<"User"> | runtime.Decimal | runtime.DecimalJsLike | number | string;
+    refreshToken?: Prisma.StringNullableWithAggregatesFilter<"User"> | string | null;
     createdAt?: Prisma.DateTimeWithAggregatesFilter<"User"> | Date | string;
     updatedAt?: Prisma.DateTimeWithAggregatesFilter<"User"> | Date | string;
 };
 export type UserCreateInput = {
+    id?: string;
     name: string;
     email: string;
     password: string;
     balance?: runtime.Decimal | runtime.DecimalJsLike | number | string;
+    refreshToken?: string | null;
     createdAt?: Date | string;
     updatedAt?: Date | string;
+    holdings?: Prisma.HoldingCreateNestedManyWithoutUserInput;
+    orders?: Prisma.OrderCreateNestedManyWithoutUserInput;
+    transactions?: Prisma.TransactionCreateNestedManyWithoutUserInput;
+    watchlists?: Prisma.WatchlistCreateNestedManyWithoutUserInput;
 };
 export type UserUncheckedCreateInput = {
-    id?: number;
+    id?: string;
     name: string;
     email: string;
     password: string;
     balance?: runtime.Decimal | runtime.DecimalJsLike | number | string;
+    refreshToken?: string | null;
     createdAt?: Date | string;
     updatedAt?: Date | string;
+    holdings?: Prisma.HoldingUncheckedCreateNestedManyWithoutUserInput;
+    orders?: Prisma.OrderUncheckedCreateNestedManyWithoutUserInput;
+    transactions?: Prisma.TransactionUncheckedCreateNestedManyWithoutUserInput;
+    watchlists?: Prisma.WatchlistUncheckedCreateNestedManyWithoutUserInput;
 };
 export type UserUpdateInput = {
+    id?: Prisma.StringFieldUpdateOperationsInput | string;
     name?: Prisma.StringFieldUpdateOperationsInput | string;
     email?: Prisma.StringFieldUpdateOperationsInput | string;
     password?: Prisma.StringFieldUpdateOperationsInput | string;
     balance?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string;
+    refreshToken?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+    holdings?: Prisma.HoldingUpdateManyWithoutUserNestedInput;
+    orders?: Prisma.OrderUpdateManyWithoutUserNestedInput;
+    transactions?: Prisma.TransactionUpdateManyWithoutUserNestedInput;
+    watchlists?: Prisma.WatchlistUpdateManyWithoutUserNestedInput;
 };
 export type UserUncheckedUpdateInput = {
-    id?: Prisma.IntFieldUpdateOperationsInput | number;
+    id?: Prisma.StringFieldUpdateOperationsInput | string;
     name?: Prisma.StringFieldUpdateOperationsInput | string;
     email?: Prisma.StringFieldUpdateOperationsInput | string;
     password?: Prisma.StringFieldUpdateOperationsInput | string;
     balance?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string;
+    refreshToken?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+    holdings?: Prisma.HoldingUncheckedUpdateManyWithoutUserNestedInput;
+    orders?: Prisma.OrderUncheckedUpdateManyWithoutUserNestedInput;
+    transactions?: Prisma.TransactionUncheckedUpdateManyWithoutUserNestedInput;
+    watchlists?: Prisma.WatchlistUncheckedUpdateManyWithoutUserNestedInput;
 };
 export type UserCreateManyInput = {
-    id?: number;
+    id?: string;
     name: string;
     email: string;
     password: string;
     balance?: runtime.Decimal | runtime.DecimalJsLike | number | string;
+    refreshToken?: string | null;
     createdAt?: Date | string;
     updatedAt?: Date | string;
 };
 export type UserUpdateManyMutationInput = {
+    id?: Prisma.StringFieldUpdateOperationsInput | string;
     name?: Prisma.StringFieldUpdateOperationsInput | string;
     email?: Prisma.StringFieldUpdateOperationsInput | string;
     password?: Prisma.StringFieldUpdateOperationsInput | string;
     balance?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string;
+    refreshToken?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
 };
 export type UserUncheckedUpdateManyInput = {
-    id?: Prisma.IntFieldUpdateOperationsInput | number;
+    id?: Prisma.StringFieldUpdateOperationsInput | string;
     name?: Prisma.StringFieldUpdateOperationsInput | string;
     email?: Prisma.StringFieldUpdateOperationsInput | string;
     password?: Prisma.StringFieldUpdateOperationsInput | string;
     balance?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string;
+    refreshToken?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
     createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
     updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
 };
@@ -308,11 +354,11 @@ export type UserCountOrderByAggregateInput = {
     email?: Prisma.SortOrder;
     password?: Prisma.SortOrder;
     balance?: Prisma.SortOrder;
+    refreshToken?: Prisma.SortOrder;
     createdAt?: Prisma.SortOrder;
     updatedAt?: Prisma.SortOrder;
 };
 export type UserAvgOrderByAggregateInput = {
-    id?: Prisma.SortOrder;
     balance?: Prisma.SortOrder;
 };
 export type UserMaxOrderByAggregateInput = {
@@ -321,6 +367,7 @@ export type UserMaxOrderByAggregateInput = {
     email?: Prisma.SortOrder;
     password?: Prisma.SortOrder;
     balance?: Prisma.SortOrder;
+    refreshToken?: Prisma.SortOrder;
     createdAt?: Prisma.SortOrder;
     updatedAt?: Prisma.SortOrder;
 };
@@ -330,12 +377,16 @@ export type UserMinOrderByAggregateInput = {
     email?: Prisma.SortOrder;
     password?: Prisma.SortOrder;
     balance?: Prisma.SortOrder;
+    refreshToken?: Prisma.SortOrder;
     createdAt?: Prisma.SortOrder;
     updatedAt?: Prisma.SortOrder;
 };
 export type UserSumOrderByAggregateInput = {
-    id?: Prisma.SortOrder;
     balance?: Prisma.SortOrder;
+};
+export type UserScalarRelationFilter = {
+    is?: Prisma.UserWhereInput;
+    isNot?: Prisma.UserWhereInput;
 };
 export type StringFieldUpdateOperationsInput = {
     set?: string;
@@ -347,15 +398,367 @@ export type DecimalFieldUpdateOperationsInput = {
     multiply?: runtime.Decimal | runtime.DecimalJsLike | number | string;
     divide?: runtime.Decimal | runtime.DecimalJsLike | number | string;
 };
+export type NullableStringFieldUpdateOperationsInput = {
+    set?: string | null;
+};
 export type DateTimeFieldUpdateOperationsInput = {
     set?: Date | string;
 };
-export type IntFieldUpdateOperationsInput = {
-    set?: number;
-    increment?: number;
-    decrement?: number;
-    multiply?: number;
-    divide?: number;
+export type UserCreateNestedOneWithoutHoldingsInput = {
+    create?: Prisma.XOR<Prisma.UserCreateWithoutHoldingsInput, Prisma.UserUncheckedCreateWithoutHoldingsInput>;
+    connectOrCreate?: Prisma.UserCreateOrConnectWithoutHoldingsInput;
+    connect?: Prisma.UserWhereUniqueInput;
+};
+export type UserUpdateOneRequiredWithoutHoldingsNestedInput = {
+    create?: Prisma.XOR<Prisma.UserCreateWithoutHoldingsInput, Prisma.UserUncheckedCreateWithoutHoldingsInput>;
+    connectOrCreate?: Prisma.UserCreateOrConnectWithoutHoldingsInput;
+    upsert?: Prisma.UserUpsertWithoutHoldingsInput;
+    connect?: Prisma.UserWhereUniqueInput;
+    update?: Prisma.XOR<Prisma.XOR<Prisma.UserUpdateToOneWithWhereWithoutHoldingsInput, Prisma.UserUpdateWithoutHoldingsInput>, Prisma.UserUncheckedUpdateWithoutHoldingsInput>;
+};
+export type UserCreateNestedOneWithoutOrdersInput = {
+    create?: Prisma.XOR<Prisma.UserCreateWithoutOrdersInput, Prisma.UserUncheckedCreateWithoutOrdersInput>;
+    connectOrCreate?: Prisma.UserCreateOrConnectWithoutOrdersInput;
+    connect?: Prisma.UserWhereUniqueInput;
+};
+export type UserUpdateOneRequiredWithoutOrdersNestedInput = {
+    create?: Prisma.XOR<Prisma.UserCreateWithoutOrdersInput, Prisma.UserUncheckedCreateWithoutOrdersInput>;
+    connectOrCreate?: Prisma.UserCreateOrConnectWithoutOrdersInput;
+    upsert?: Prisma.UserUpsertWithoutOrdersInput;
+    connect?: Prisma.UserWhereUniqueInput;
+    update?: Prisma.XOR<Prisma.XOR<Prisma.UserUpdateToOneWithWhereWithoutOrdersInput, Prisma.UserUpdateWithoutOrdersInput>, Prisma.UserUncheckedUpdateWithoutOrdersInput>;
+};
+export type UserCreateNestedOneWithoutTransactionsInput = {
+    create?: Prisma.XOR<Prisma.UserCreateWithoutTransactionsInput, Prisma.UserUncheckedCreateWithoutTransactionsInput>;
+    connectOrCreate?: Prisma.UserCreateOrConnectWithoutTransactionsInput;
+    connect?: Prisma.UserWhereUniqueInput;
+};
+export type UserUpdateOneRequiredWithoutTransactionsNestedInput = {
+    create?: Prisma.XOR<Prisma.UserCreateWithoutTransactionsInput, Prisma.UserUncheckedCreateWithoutTransactionsInput>;
+    connectOrCreate?: Prisma.UserCreateOrConnectWithoutTransactionsInput;
+    upsert?: Prisma.UserUpsertWithoutTransactionsInput;
+    connect?: Prisma.UserWhereUniqueInput;
+    update?: Prisma.XOR<Prisma.XOR<Prisma.UserUpdateToOneWithWhereWithoutTransactionsInput, Prisma.UserUpdateWithoutTransactionsInput>, Prisma.UserUncheckedUpdateWithoutTransactionsInput>;
+};
+export type UserCreateNestedOneWithoutWatchlistsInput = {
+    create?: Prisma.XOR<Prisma.UserCreateWithoutWatchlistsInput, Prisma.UserUncheckedCreateWithoutWatchlistsInput>;
+    connectOrCreate?: Prisma.UserCreateOrConnectWithoutWatchlistsInput;
+    connect?: Prisma.UserWhereUniqueInput;
+};
+export type UserUpdateOneRequiredWithoutWatchlistsNestedInput = {
+    create?: Prisma.XOR<Prisma.UserCreateWithoutWatchlistsInput, Prisma.UserUncheckedCreateWithoutWatchlistsInput>;
+    connectOrCreate?: Prisma.UserCreateOrConnectWithoutWatchlistsInput;
+    upsert?: Prisma.UserUpsertWithoutWatchlistsInput;
+    connect?: Prisma.UserWhereUniqueInput;
+    update?: Prisma.XOR<Prisma.XOR<Prisma.UserUpdateToOneWithWhereWithoutWatchlistsInput, Prisma.UserUpdateWithoutWatchlistsInput>, Prisma.UserUncheckedUpdateWithoutWatchlistsInput>;
+};
+export type UserCreateWithoutHoldingsInput = {
+    id?: string;
+    name: string;
+    email: string;
+    password: string;
+    balance?: runtime.Decimal | runtime.DecimalJsLike | number | string;
+    refreshToken?: string | null;
+    createdAt?: Date | string;
+    updatedAt?: Date | string;
+    orders?: Prisma.OrderCreateNestedManyWithoutUserInput;
+    transactions?: Prisma.TransactionCreateNestedManyWithoutUserInput;
+    watchlists?: Prisma.WatchlistCreateNestedManyWithoutUserInput;
+};
+export type UserUncheckedCreateWithoutHoldingsInput = {
+    id?: string;
+    name: string;
+    email: string;
+    password: string;
+    balance?: runtime.Decimal | runtime.DecimalJsLike | number | string;
+    refreshToken?: string | null;
+    createdAt?: Date | string;
+    updatedAt?: Date | string;
+    orders?: Prisma.OrderUncheckedCreateNestedManyWithoutUserInput;
+    transactions?: Prisma.TransactionUncheckedCreateNestedManyWithoutUserInput;
+    watchlists?: Prisma.WatchlistUncheckedCreateNestedManyWithoutUserInput;
+};
+export type UserCreateOrConnectWithoutHoldingsInput = {
+    where: Prisma.UserWhereUniqueInput;
+    create: Prisma.XOR<Prisma.UserCreateWithoutHoldingsInput, Prisma.UserUncheckedCreateWithoutHoldingsInput>;
+};
+export type UserUpsertWithoutHoldingsInput = {
+    update: Prisma.XOR<Prisma.UserUpdateWithoutHoldingsInput, Prisma.UserUncheckedUpdateWithoutHoldingsInput>;
+    create: Prisma.XOR<Prisma.UserCreateWithoutHoldingsInput, Prisma.UserUncheckedCreateWithoutHoldingsInput>;
+    where?: Prisma.UserWhereInput;
+};
+export type UserUpdateToOneWithWhereWithoutHoldingsInput = {
+    where?: Prisma.UserWhereInput;
+    data: Prisma.XOR<Prisma.UserUpdateWithoutHoldingsInput, Prisma.UserUncheckedUpdateWithoutHoldingsInput>;
+};
+export type UserUpdateWithoutHoldingsInput = {
+    id?: Prisma.StringFieldUpdateOperationsInput | string;
+    name?: Prisma.StringFieldUpdateOperationsInput | string;
+    email?: Prisma.StringFieldUpdateOperationsInput | string;
+    password?: Prisma.StringFieldUpdateOperationsInput | string;
+    balance?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string;
+    refreshToken?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+    updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+    orders?: Prisma.OrderUpdateManyWithoutUserNestedInput;
+    transactions?: Prisma.TransactionUpdateManyWithoutUserNestedInput;
+    watchlists?: Prisma.WatchlistUpdateManyWithoutUserNestedInput;
+};
+export type UserUncheckedUpdateWithoutHoldingsInput = {
+    id?: Prisma.StringFieldUpdateOperationsInput | string;
+    name?: Prisma.StringFieldUpdateOperationsInput | string;
+    email?: Prisma.StringFieldUpdateOperationsInput | string;
+    password?: Prisma.StringFieldUpdateOperationsInput | string;
+    balance?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string;
+    refreshToken?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+    updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+    orders?: Prisma.OrderUncheckedUpdateManyWithoutUserNestedInput;
+    transactions?: Prisma.TransactionUncheckedUpdateManyWithoutUserNestedInput;
+    watchlists?: Prisma.WatchlistUncheckedUpdateManyWithoutUserNestedInput;
+};
+export type UserCreateWithoutOrdersInput = {
+    id?: string;
+    name: string;
+    email: string;
+    password: string;
+    balance?: runtime.Decimal | runtime.DecimalJsLike | number | string;
+    refreshToken?: string | null;
+    createdAt?: Date | string;
+    updatedAt?: Date | string;
+    holdings?: Prisma.HoldingCreateNestedManyWithoutUserInput;
+    transactions?: Prisma.TransactionCreateNestedManyWithoutUserInput;
+    watchlists?: Prisma.WatchlistCreateNestedManyWithoutUserInput;
+};
+export type UserUncheckedCreateWithoutOrdersInput = {
+    id?: string;
+    name: string;
+    email: string;
+    password: string;
+    balance?: runtime.Decimal | runtime.DecimalJsLike | number | string;
+    refreshToken?: string | null;
+    createdAt?: Date | string;
+    updatedAt?: Date | string;
+    holdings?: Prisma.HoldingUncheckedCreateNestedManyWithoutUserInput;
+    transactions?: Prisma.TransactionUncheckedCreateNestedManyWithoutUserInput;
+    watchlists?: Prisma.WatchlistUncheckedCreateNestedManyWithoutUserInput;
+};
+export type UserCreateOrConnectWithoutOrdersInput = {
+    where: Prisma.UserWhereUniqueInput;
+    create: Prisma.XOR<Prisma.UserCreateWithoutOrdersInput, Prisma.UserUncheckedCreateWithoutOrdersInput>;
+};
+export type UserUpsertWithoutOrdersInput = {
+    update: Prisma.XOR<Prisma.UserUpdateWithoutOrdersInput, Prisma.UserUncheckedUpdateWithoutOrdersInput>;
+    create: Prisma.XOR<Prisma.UserCreateWithoutOrdersInput, Prisma.UserUncheckedCreateWithoutOrdersInput>;
+    where?: Prisma.UserWhereInput;
+};
+export type UserUpdateToOneWithWhereWithoutOrdersInput = {
+    where?: Prisma.UserWhereInput;
+    data: Prisma.XOR<Prisma.UserUpdateWithoutOrdersInput, Prisma.UserUncheckedUpdateWithoutOrdersInput>;
+};
+export type UserUpdateWithoutOrdersInput = {
+    id?: Prisma.StringFieldUpdateOperationsInput | string;
+    name?: Prisma.StringFieldUpdateOperationsInput | string;
+    email?: Prisma.StringFieldUpdateOperationsInput | string;
+    password?: Prisma.StringFieldUpdateOperationsInput | string;
+    balance?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string;
+    refreshToken?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+    updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+    holdings?: Prisma.HoldingUpdateManyWithoutUserNestedInput;
+    transactions?: Prisma.TransactionUpdateManyWithoutUserNestedInput;
+    watchlists?: Prisma.WatchlistUpdateManyWithoutUserNestedInput;
+};
+export type UserUncheckedUpdateWithoutOrdersInput = {
+    id?: Prisma.StringFieldUpdateOperationsInput | string;
+    name?: Prisma.StringFieldUpdateOperationsInput | string;
+    email?: Prisma.StringFieldUpdateOperationsInput | string;
+    password?: Prisma.StringFieldUpdateOperationsInput | string;
+    balance?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string;
+    refreshToken?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+    updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+    holdings?: Prisma.HoldingUncheckedUpdateManyWithoutUserNestedInput;
+    transactions?: Prisma.TransactionUncheckedUpdateManyWithoutUserNestedInput;
+    watchlists?: Prisma.WatchlistUncheckedUpdateManyWithoutUserNestedInput;
+};
+export type UserCreateWithoutTransactionsInput = {
+    id?: string;
+    name: string;
+    email: string;
+    password: string;
+    balance?: runtime.Decimal | runtime.DecimalJsLike | number | string;
+    refreshToken?: string | null;
+    createdAt?: Date | string;
+    updatedAt?: Date | string;
+    holdings?: Prisma.HoldingCreateNestedManyWithoutUserInput;
+    orders?: Prisma.OrderCreateNestedManyWithoutUserInput;
+    watchlists?: Prisma.WatchlistCreateNestedManyWithoutUserInput;
+};
+export type UserUncheckedCreateWithoutTransactionsInput = {
+    id?: string;
+    name: string;
+    email: string;
+    password: string;
+    balance?: runtime.Decimal | runtime.DecimalJsLike | number | string;
+    refreshToken?: string | null;
+    createdAt?: Date | string;
+    updatedAt?: Date | string;
+    holdings?: Prisma.HoldingUncheckedCreateNestedManyWithoutUserInput;
+    orders?: Prisma.OrderUncheckedCreateNestedManyWithoutUserInput;
+    watchlists?: Prisma.WatchlistUncheckedCreateNestedManyWithoutUserInput;
+};
+export type UserCreateOrConnectWithoutTransactionsInput = {
+    where: Prisma.UserWhereUniqueInput;
+    create: Prisma.XOR<Prisma.UserCreateWithoutTransactionsInput, Prisma.UserUncheckedCreateWithoutTransactionsInput>;
+};
+export type UserUpsertWithoutTransactionsInput = {
+    update: Prisma.XOR<Prisma.UserUpdateWithoutTransactionsInput, Prisma.UserUncheckedUpdateWithoutTransactionsInput>;
+    create: Prisma.XOR<Prisma.UserCreateWithoutTransactionsInput, Prisma.UserUncheckedCreateWithoutTransactionsInput>;
+    where?: Prisma.UserWhereInput;
+};
+export type UserUpdateToOneWithWhereWithoutTransactionsInput = {
+    where?: Prisma.UserWhereInput;
+    data: Prisma.XOR<Prisma.UserUpdateWithoutTransactionsInput, Prisma.UserUncheckedUpdateWithoutTransactionsInput>;
+};
+export type UserUpdateWithoutTransactionsInput = {
+    id?: Prisma.StringFieldUpdateOperationsInput | string;
+    name?: Prisma.StringFieldUpdateOperationsInput | string;
+    email?: Prisma.StringFieldUpdateOperationsInput | string;
+    password?: Prisma.StringFieldUpdateOperationsInput | string;
+    balance?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string;
+    refreshToken?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+    updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+    holdings?: Prisma.HoldingUpdateManyWithoutUserNestedInput;
+    orders?: Prisma.OrderUpdateManyWithoutUserNestedInput;
+    watchlists?: Prisma.WatchlistUpdateManyWithoutUserNestedInput;
+};
+export type UserUncheckedUpdateWithoutTransactionsInput = {
+    id?: Prisma.StringFieldUpdateOperationsInput | string;
+    name?: Prisma.StringFieldUpdateOperationsInput | string;
+    email?: Prisma.StringFieldUpdateOperationsInput | string;
+    password?: Prisma.StringFieldUpdateOperationsInput | string;
+    balance?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string;
+    refreshToken?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+    updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+    holdings?: Prisma.HoldingUncheckedUpdateManyWithoutUserNestedInput;
+    orders?: Prisma.OrderUncheckedUpdateManyWithoutUserNestedInput;
+    watchlists?: Prisma.WatchlistUncheckedUpdateManyWithoutUserNestedInput;
+};
+export type UserCreateWithoutWatchlistsInput = {
+    id?: string;
+    name: string;
+    email: string;
+    password: string;
+    balance?: runtime.Decimal | runtime.DecimalJsLike | number | string;
+    refreshToken?: string | null;
+    createdAt?: Date | string;
+    updatedAt?: Date | string;
+    holdings?: Prisma.HoldingCreateNestedManyWithoutUserInput;
+    orders?: Prisma.OrderCreateNestedManyWithoutUserInput;
+    transactions?: Prisma.TransactionCreateNestedManyWithoutUserInput;
+};
+export type UserUncheckedCreateWithoutWatchlistsInput = {
+    id?: string;
+    name: string;
+    email: string;
+    password: string;
+    balance?: runtime.Decimal | runtime.DecimalJsLike | number | string;
+    refreshToken?: string | null;
+    createdAt?: Date | string;
+    updatedAt?: Date | string;
+    holdings?: Prisma.HoldingUncheckedCreateNestedManyWithoutUserInput;
+    orders?: Prisma.OrderUncheckedCreateNestedManyWithoutUserInput;
+    transactions?: Prisma.TransactionUncheckedCreateNestedManyWithoutUserInput;
+};
+export type UserCreateOrConnectWithoutWatchlistsInput = {
+    where: Prisma.UserWhereUniqueInput;
+    create: Prisma.XOR<Prisma.UserCreateWithoutWatchlistsInput, Prisma.UserUncheckedCreateWithoutWatchlistsInput>;
+};
+export type UserUpsertWithoutWatchlistsInput = {
+    update: Prisma.XOR<Prisma.UserUpdateWithoutWatchlistsInput, Prisma.UserUncheckedUpdateWithoutWatchlistsInput>;
+    create: Prisma.XOR<Prisma.UserCreateWithoutWatchlistsInput, Prisma.UserUncheckedCreateWithoutWatchlistsInput>;
+    where?: Prisma.UserWhereInput;
+};
+export type UserUpdateToOneWithWhereWithoutWatchlistsInput = {
+    where?: Prisma.UserWhereInput;
+    data: Prisma.XOR<Prisma.UserUpdateWithoutWatchlistsInput, Prisma.UserUncheckedUpdateWithoutWatchlistsInput>;
+};
+export type UserUpdateWithoutWatchlistsInput = {
+    id?: Prisma.StringFieldUpdateOperationsInput | string;
+    name?: Prisma.StringFieldUpdateOperationsInput | string;
+    email?: Prisma.StringFieldUpdateOperationsInput | string;
+    password?: Prisma.StringFieldUpdateOperationsInput | string;
+    balance?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string;
+    refreshToken?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+    updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+    holdings?: Prisma.HoldingUpdateManyWithoutUserNestedInput;
+    orders?: Prisma.OrderUpdateManyWithoutUserNestedInput;
+    transactions?: Prisma.TransactionUpdateManyWithoutUserNestedInput;
+};
+export type UserUncheckedUpdateWithoutWatchlistsInput = {
+    id?: Prisma.StringFieldUpdateOperationsInput | string;
+    name?: Prisma.StringFieldUpdateOperationsInput | string;
+    email?: Prisma.StringFieldUpdateOperationsInput | string;
+    password?: Prisma.StringFieldUpdateOperationsInput | string;
+    balance?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string;
+    refreshToken?: Prisma.NullableStringFieldUpdateOperationsInput | string | null;
+    createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+    updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string;
+    holdings?: Prisma.HoldingUncheckedUpdateManyWithoutUserNestedInput;
+    orders?: Prisma.OrderUncheckedUpdateManyWithoutUserNestedInput;
+    transactions?: Prisma.TransactionUncheckedUpdateManyWithoutUserNestedInput;
+};
+/**
+ * Count Type UserCountOutputType
+ */
+export type UserCountOutputType = {
+    holdings: number;
+    orders: number;
+    transactions: number;
+    watchlists: number;
+};
+export type UserCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+    holdings?: boolean | UserCountOutputTypeCountHoldingsArgs;
+    orders?: boolean | UserCountOutputTypeCountOrdersArgs;
+    transactions?: boolean | UserCountOutputTypeCountTransactionsArgs;
+    watchlists?: boolean | UserCountOutputTypeCountWatchlistsArgs;
+};
+/**
+ * UserCountOutputType without action
+ */
+export type UserCountOutputTypeDefaultArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the UserCountOutputType
+     */
+    select?: Prisma.UserCountOutputTypeSelect<ExtArgs> | null;
+};
+/**
+ * UserCountOutputType without action
+ */
+export type UserCountOutputTypeCountHoldingsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+    where?: Prisma.HoldingWhereInput;
+};
+/**
+ * UserCountOutputType without action
+ */
+export type UserCountOutputTypeCountOrdersArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+    where?: Prisma.OrderWhereInput;
+};
+/**
+ * UserCountOutputType without action
+ */
+export type UserCountOutputTypeCountTransactionsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+    where?: Prisma.TransactionWhereInput;
+};
+/**
+ * UserCountOutputType without action
+ */
+export type UserCountOutputTypeCountWatchlistsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+    where?: Prisma.WatchlistWhereInput;
 };
 export type UserSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
     id?: boolean;
@@ -363,8 +766,14 @@ export type UserSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = r
     email?: boolean;
     password?: boolean;
     balance?: boolean;
+    refreshToken?: boolean;
     createdAt?: boolean;
     updatedAt?: boolean;
+    holdings?: boolean | Prisma.User$holdingsArgs<ExtArgs>;
+    orders?: boolean | Prisma.User$ordersArgs<ExtArgs>;
+    transactions?: boolean | Prisma.User$transactionsArgs<ExtArgs>;
+    watchlists?: boolean | Prisma.User$watchlistsArgs<ExtArgs>;
+    _count?: boolean | Prisma.UserCountOutputTypeDefaultArgs<ExtArgs>;
 }, ExtArgs["result"]["user"]>;
 export type UserSelectScalar = {
     id?: boolean;
@@ -372,19 +781,33 @@ export type UserSelectScalar = {
     email?: boolean;
     password?: boolean;
     balance?: boolean;
+    refreshToken?: boolean;
     createdAt?: boolean;
     updatedAt?: boolean;
 };
-export type UserOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "name" | "email" | "password" | "balance" | "createdAt" | "updatedAt", ExtArgs["result"]["user"]>;
+export type UserOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "name" | "email" | "password" | "balance" | "refreshToken" | "createdAt" | "updatedAt", ExtArgs["result"]["user"]>;
+export type UserInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+    holdings?: boolean | Prisma.User$holdingsArgs<ExtArgs>;
+    orders?: boolean | Prisma.User$ordersArgs<ExtArgs>;
+    transactions?: boolean | Prisma.User$transactionsArgs<ExtArgs>;
+    watchlists?: boolean | Prisma.User$watchlistsArgs<ExtArgs>;
+    _count?: boolean | Prisma.UserCountOutputTypeDefaultArgs<ExtArgs>;
+};
 export type $UserPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
     name: "User";
-    objects: {};
+    objects: {
+        holdings: Prisma.$HoldingPayload<ExtArgs>[];
+        orders: Prisma.$OrderPayload<ExtArgs>[];
+        transactions: Prisma.$TransactionPayload<ExtArgs>[];
+        watchlists: Prisma.$WatchlistPayload<ExtArgs>[];
+    };
     scalars: runtime.Types.Extensions.GetPayloadResult<{
-        id: number;
+        id: string;
         name: string;
         email: string;
         password: string;
         balance: runtime.Decimal;
+        refreshToken: string | null;
         createdAt: Date;
         updatedAt: Date;
     }, ExtArgs["result"]["user"]>;
@@ -664,6 +1087,10 @@ export interface UserDelegate<ExtArgs extends runtime.Types.Extensions.InternalA
  */
 export interface Prisma__UserClient<T, Null = never, ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
     readonly [Symbol.toStringTag]: "PrismaPromise";
+    holdings<T extends Prisma.User$holdingsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$holdingsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$HoldingPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>;
+    orders<T extends Prisma.User$ordersArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$ordersArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$OrderPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>;
+    transactions<T extends Prisma.User$transactionsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$transactionsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$TransactionPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>;
+    watchlists<T extends Prisma.User$watchlistsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.User$watchlistsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$WatchlistPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>;
     /**
      * Attaches callbacks for the resolution and/or rejection of the Promise.
      * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -689,11 +1116,12 @@ export interface Prisma__UserClient<T, Null = never, ExtArgs extends runtime.Typ
  * Fields of the User model
  */
 export interface UserFieldRefs {
-    readonly id: Prisma.FieldRef<"User", 'Int'>;
+    readonly id: Prisma.FieldRef<"User", 'String'>;
     readonly name: Prisma.FieldRef<"User", 'String'>;
     readonly email: Prisma.FieldRef<"User", 'String'>;
     readonly password: Prisma.FieldRef<"User", 'String'>;
     readonly balance: Prisma.FieldRef<"User", 'Decimal'>;
+    readonly refreshToken: Prisma.FieldRef<"User", 'String'>;
     readonly createdAt: Prisma.FieldRef<"User", 'DateTime'>;
     readonly updatedAt: Prisma.FieldRef<"User", 'DateTime'>;
 }
@@ -709,6 +1137,10 @@ export type UserFindUniqueArgs<ExtArgs extends runtime.Types.Extensions.Internal
      * Omit specific fields from the User
      */
     omit?: Prisma.UserOmit<ExtArgs> | null;
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: Prisma.UserInclude<ExtArgs> | null;
     /**
      * Filter, which User to fetch.
      */
@@ -727,6 +1159,10 @@ export type UserFindUniqueOrThrowArgs<ExtArgs extends runtime.Types.Extensions.I
      */
     omit?: Prisma.UserOmit<ExtArgs> | null;
     /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: Prisma.UserInclude<ExtArgs> | null;
+    /**
      * Filter, which User to fetch.
      */
     where: Prisma.UserWhereUniqueInput;
@@ -743,6 +1179,10 @@ export type UserFindFirstArgs<ExtArgs extends runtime.Types.Extensions.InternalA
      * Omit specific fields from the User
      */
     omit?: Prisma.UserOmit<ExtArgs> | null;
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: Prisma.UserInclude<ExtArgs> | null;
     /**
      * Filter, which User to fetch.
      */
@@ -791,6 +1231,10 @@ export type UserFindFirstOrThrowArgs<ExtArgs extends runtime.Types.Extensions.In
      */
     omit?: Prisma.UserOmit<ExtArgs> | null;
     /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: Prisma.UserInclude<ExtArgs> | null;
+    /**
      * Filter, which User to fetch.
      */
     where?: Prisma.UserWhereInput;
@@ -837,6 +1281,10 @@ export type UserFindManyArgs<ExtArgs extends runtime.Types.Extensions.InternalAr
      * Omit specific fields from the User
      */
     omit?: Prisma.UserOmit<ExtArgs> | null;
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: Prisma.UserInclude<ExtArgs> | null;
     /**
      * Filter, which Users to fetch.
      */
@@ -885,6 +1333,10 @@ export type UserCreateArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs
      */
     omit?: Prisma.UserOmit<ExtArgs> | null;
     /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: Prisma.UserInclude<ExtArgs> | null;
+    /**
      * The data needed to create a User.
      */
     data: Prisma.XOR<Prisma.UserCreateInput, Prisma.UserUncheckedCreateInput>;
@@ -911,6 +1363,10 @@ export type UserUpdateArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs
      * Omit specific fields from the User
      */
     omit?: Prisma.UserOmit<ExtArgs> | null;
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: Prisma.UserInclude<ExtArgs> | null;
     /**
      * The data needed to update a User.
      */
@@ -950,6 +1406,10 @@ export type UserUpsertArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs
      */
     omit?: Prisma.UserOmit<ExtArgs> | null;
     /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: Prisma.UserInclude<ExtArgs> | null;
+    /**
      * The filter to search for the User to update in case it exists.
      */
     where: Prisma.UserWhereUniqueInput;
@@ -975,6 +1435,10 @@ export type UserDeleteArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs
      */
     omit?: Prisma.UserOmit<ExtArgs> | null;
     /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: Prisma.UserInclude<ExtArgs> | null;
+    /**
      * Filter which User to delete.
      */
     where: Prisma.UserWhereUniqueInput;
@@ -993,6 +1457,98 @@ export type UserDeleteManyArgs<ExtArgs extends runtime.Types.Extensions.Internal
     limit?: number;
 };
 /**
+ * User.holdings
+ */
+export type User$holdingsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Holding
+     */
+    select?: Prisma.HoldingSelect<ExtArgs> | null;
+    /**
+     * Omit specific fields from the Holding
+     */
+    omit?: Prisma.HoldingOmit<ExtArgs> | null;
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: Prisma.HoldingInclude<ExtArgs> | null;
+    where?: Prisma.HoldingWhereInput;
+    orderBy?: Prisma.HoldingOrderByWithRelationInput | Prisma.HoldingOrderByWithRelationInput[];
+    cursor?: Prisma.HoldingWhereUniqueInput;
+    take?: number;
+    skip?: number;
+    distinct?: Prisma.HoldingScalarFieldEnum | Prisma.HoldingScalarFieldEnum[];
+};
+/**
+ * User.orders
+ */
+export type User$ordersArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Order
+     */
+    select?: Prisma.OrderSelect<ExtArgs> | null;
+    /**
+     * Omit specific fields from the Order
+     */
+    omit?: Prisma.OrderOmit<ExtArgs> | null;
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: Prisma.OrderInclude<ExtArgs> | null;
+    where?: Prisma.OrderWhereInput;
+    orderBy?: Prisma.OrderOrderByWithRelationInput | Prisma.OrderOrderByWithRelationInput[];
+    cursor?: Prisma.OrderWhereUniqueInput;
+    take?: number;
+    skip?: number;
+    distinct?: Prisma.OrderScalarFieldEnum | Prisma.OrderScalarFieldEnum[];
+};
+/**
+ * User.transactions
+ */
+export type User$transactionsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Transaction
+     */
+    select?: Prisma.TransactionSelect<ExtArgs> | null;
+    /**
+     * Omit specific fields from the Transaction
+     */
+    omit?: Prisma.TransactionOmit<ExtArgs> | null;
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: Prisma.TransactionInclude<ExtArgs> | null;
+    where?: Prisma.TransactionWhereInput;
+    orderBy?: Prisma.TransactionOrderByWithRelationInput | Prisma.TransactionOrderByWithRelationInput[];
+    cursor?: Prisma.TransactionWhereUniqueInput;
+    take?: number;
+    skip?: number;
+    distinct?: Prisma.TransactionScalarFieldEnum | Prisma.TransactionScalarFieldEnum[];
+};
+/**
+ * User.watchlists
+ */
+export type User$watchlistsArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Watchlist
+     */
+    select?: Prisma.WatchlistSelect<ExtArgs> | null;
+    /**
+     * Omit specific fields from the Watchlist
+     */
+    omit?: Prisma.WatchlistOmit<ExtArgs> | null;
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: Prisma.WatchlistInclude<ExtArgs> | null;
+    where?: Prisma.WatchlistWhereInput;
+    orderBy?: Prisma.WatchlistOrderByWithRelationInput | Prisma.WatchlistOrderByWithRelationInput[];
+    cursor?: Prisma.WatchlistWhereUniqueInput;
+    take?: number;
+    skip?: number;
+    distinct?: Prisma.WatchlistScalarFieldEnum | Prisma.WatchlistScalarFieldEnum[];
+};
+/**
  * User without action
  */
 export type UserDefaultArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -1004,5 +1560,9 @@ export type UserDefaultArgs<ExtArgs extends runtime.Types.Extensions.InternalArg
      * Omit specific fields from the User
      */
     omit?: Prisma.UserOmit<ExtArgs> | null;
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: Prisma.UserInclude<ExtArgs> | null;
 };
 //# sourceMappingURL=User.d.ts.map

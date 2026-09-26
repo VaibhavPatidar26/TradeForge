@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useOrdersStore, type Order } from "../../store/ordersStore";
 import { useAuthStore } from "../../store/authStore";
 
@@ -20,7 +20,7 @@ function statusBadge(status: Order["status"]) {
     if (status === "REJECTED") {
         return (
             <span className="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-red-950/60 text-red-400 border border-red-800/40">
-                Rejected
+                Cancelled
             </span>
         );
     }
@@ -40,14 +40,28 @@ export function Orders() {
     const orders = useOrdersStore((s) => s.orders);
     const isLoading = useOrdersStore((s) => s.isLoading);
     const fetchTodayOrders = useOrdersStore((s) => s.fetchTodayOrders);
+    const cancelOrder = useOrdersStore((s) => s.cancelOrder);
+
+    const [cancellingId, setCancellingId] = useState<string | null>(null);
 
     useEffect(function () {
         if (token) fetchTodayOrders(token);
     }, [token, fetchTodayOrders]);
 
+    async function handleCancel(orderId: string) {
+        if (!token) return;
+        setCancellingId(orderId);
+        try {
+            await cancelOrder(token, orderId);
+        } catch (err: any) {
+            console.error("Cancel order error:", err);
+        } finally {
+            setCancellingId(null);
+        }
+    }
 
-    const openOrders  = orders.filter((o) => o.status === "OPEN");
-    const doneOrders  = orders.filter((o) => o.status !== "OPEN");
+    const openOrders = orders.filter((o) => o.status === "OPEN");
+    const doneOrders = orders.filter((o) => o.status !== "OPEN");
 
     return (
         <div className="flex-1 h-full min-h-0 bg-[#0b0e11] text-white p-3 overflow-y-auto">
@@ -68,21 +82,26 @@ export function Orders() {
             {openOrders.length > 0 && (
                 <div className="mb-4">
                     <p className="text-[10px] uppercase tracking-widest text-yellow-500/70 font-semibold mb-2">
-                        Pending
+                        Pending ({openOrders.length})
                     </p>
                     <div className="rounded-lg border border-[#252b33] bg-[#11161c] overflow-hidden divide-y divide-[#1f242b]">
                         {openOrders.map((order) => (
-                            <OrderRow key={order.id} order={order} />
+                            <OrderRow
+                                key={order.id}
+                                order={order}
+                                onCancel={() => handleCancel(order.id)}
+                                isCancelling={cancellingId === order.id}
+                            />
                         ))}
                     </div>
                 </div>
             )}
 
-            {/* Executed / Rejected orders */}
+            {/* Executed / Cancelled orders */}
             {doneOrders.length > 0 && (
                 <div>
                     <p className="text-[10px] uppercase tracking-widest text-gray-500 font-semibold mb-2">
-                        Executed
+                        Executed / Cancelled ({doneOrders.length})
                     </p>
                     <div className="rounded-lg border border-[#252b33] bg-[#11161c] overflow-hidden divide-y divide-[#1f242b]">
                         {doneOrders.map((order) => (
@@ -95,7 +114,15 @@ export function Orders() {
     );
 }
 
-function OrderRow({ order }: { order: Order }) {
+function OrderRow({
+    order,
+    onCancel,
+    isCancelling
+}: {
+    order: Order;
+    onCancel?: () => void;
+    isCancelling?: boolean;
+}) {
     const isBuy  = order.side === "BUY";
     const symbol = order.stock?.trading_symbol ?? order.stockId;
     const name   = order.stock?.name ?? order.stockId;
@@ -105,8 +132,10 @@ function OrderRow({ order }: { order: Order }) {
             ? order.executedPrice
             : order.limitPrice ?? null;
 
+    const isOpen = order.status === "OPEN" || order.status === "PENDING";
+
     return (
-        <div className="px-3 py-2.5 flex items-center gap-2">
+        <div className="px-3 py-2.5 flex items-center gap-2 hover:bg-[#151b22] transition-colors">
             {/* Side indicator */}
             <div
                 className={`w-1 self-stretch rounded-full shrink-0 ${
@@ -132,7 +161,7 @@ function OrderRow({ order }: { order: Order }) {
                 <p className="text-[10px] text-gray-500 truncate">{name}</p>
             </div>
 
-            {/* Right side */}
+            {/* Price & Quantity Info */}
             <div className="text-right shrink-0">
                 {statusBadge(order.status)}
                 <p className="text-[11px] text-gray-300 tabular-nums mt-1">
@@ -142,6 +171,22 @@ function OrderRow({ order }: { order: Order }) {
                     )}
                 </p>
             </div>
+
+            {/* Cancel Action if OPEN */}
+            {isOpen && onCancel && (
+                <div className="shrink-0 pl-1">
+                    <button
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            onCancel();
+                        }}
+                        disabled={isCancelling}
+                        className="text-[11px] text-red-400 hover:text-red-300 disabled:opacity-50 px-2 py-0.5 rounded border border-red-900/40 hover:border-red-700 bg-red-950/20 cursor-pointer transition-colors"
+                    >
+                        {isCancelling ? "Cancelling..." : "Cancel"}
+                    </button>
+                </div>
+            )}
         </div>
     );
 }
