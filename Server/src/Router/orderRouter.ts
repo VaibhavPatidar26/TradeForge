@@ -1,7 +1,7 @@
 import express from "express";
 import isLoggedin from "../middlewares/isLoggedIn.js";
 import { buyMarketOrder } from "../controllers/orderController/buyMarketOrder.js";
-import sellStock from "../controllers/sellStocks.js";
+import sellStock from "../controllers/orderController/sellMarketStocks.js";
 import BuyLimitOrder from "../controllers/orderController/buyLimitOrder.js";
 import sellLimitOrder from "../controllers/orderController/sellLimitOrder.js";
 import { getTodayOrders } from "../controllers/orderController/getTodayOrders.js";

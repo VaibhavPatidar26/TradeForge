@@ -4,6 +4,7 @@ import { usePriceStore } from "../../store/priceStore";
 import { useOrdersStore } from "../../store/ordersStore";
 import { useAuthStore } from "../../store/authStore";
 import { useUserStore } from "../../store/userStore";
+import selling from "../../api/selling";
 
 const MIN_HEIGHT = 80;
 const DEFAULT_HEIGHT = 140;
@@ -29,6 +30,7 @@ export default function PositionsPanel() {
     const fetchUser        = useUserStore((s) => s.fetchUser);
 
     const [cancellingId, setCancellingId] = useState<string | null>(null);
+    const [exitingStockId, setExitingStockId] = useState<string | null>(null);
 
     useEffect(() => {
         if (token) {
@@ -47,6 +49,24 @@ export default function PositionsPanel() {
             console.error("Cancel order error:", err);
         } finally {
             setCancellingId(null);
+        }
+    }
+
+    async function handleExit(stockId: string, quantity: number) {
+        if (!token || quantity <= 0) return;
+        setExitingStockId(stockId);
+        try {
+            await selling(token, stockId, quantity);
+            await Promise.all([
+                fetchPortfolio(token),
+                fetchTodayOrders(token),
+                fetchUser(token)
+            ]);
+        } catch (err: any) {
+            console.error("Failed to exit position:", err);
+            alert(err?.response?.data?.message || err?.message || "Failed to exit position");
+        } finally {
+            setExitingStockId(null);
         }
     }
 
@@ -143,7 +163,12 @@ export default function PositionsPanel() {
             {/* ── Scrollable content ──────────────────────────────────────── */}
             <div className="flex-1 min-h-0 overflow-x-auto overflow-y-hidden">
                 {activeTab === "positions" && (
-                    <PositionsTable holdings={holdings} prices={prices} />
+                    <PositionsTable
+                        holdings={holdings}
+                        prices={prices}
+                        onExit={handleExit}
+                        exitingStockId={exitingStockId}
+                    />
                 )}
                 {activeTab === "pending" && (
                     <PendingTable
@@ -158,7 +183,24 @@ export default function PositionsPanel() {
 }
 
 // ── Positions table ────────────────────────────────────────────────────────────
-function PositionsTable({ holdings, prices }: { holdings: any[]; prices: Record<string, number> }) {
+function PositionsTable({
+    holdings,
+    prices,
+    onExit,
+    exitingStockId
+}: {
+    holdings: any[];
+    prices: Record<string, number>;
+    onExit: (stockId: string, quantity: number) => void;
+    exitingStockId: string | null;
+}) {
+    const [quantities, setQuantities] = useState<Record<string, number>>({});
+
+    function updateQty(holdingId: string, val: number, maxQty: number) {
+        const clamped = Math.max(1, Math.min(maxQty, Math.floor(val)));
+        setQuantities((prev) => ({ ...prev, [holdingId]: clamped }));
+    }
+
     if (holdings.length === 0) {
         return (
             <div className="flex items-center justify-center h-full text-xs text-gray-600">
@@ -177,6 +219,7 @@ function PositionsTable({ holdings, prices }: { holdings: any[]; prices: Record<
                     <th className="text-right px-3 py-1.5 font-medium">LTP</th>
                     <th className="text-right px-3 py-1.5 font-medium">P&L</th>
                     <th className="text-right px-3 py-1.5 font-medium">P&L %</th>
+                    <th className="text-right px-3 py-1.5 font-medium">Exit Position</th>
                 </tr>
             </thead>
             <tbody>
@@ -187,6 +230,9 @@ function PositionsTable({ holdings, prices }: { holdings: any[]; prices: Record<
                     const pnl      = ltp != null ? (ltp - avg) * qty : null;
                     const pnlPct   = ltp != null ? ((ltp - avg) / avg) * 100 : null;
                     const positive = pnl != null && pnl >= 0;
+
+                    const currentExitQty = Math.min(quantities[h.id] ?? qty, qty);
+                    const isExiting = exitingStockId === h.stockId;
 
                     return (
                         <tr
@@ -223,6 +269,47 @@ function PositionsTable({ holdings, prices }: { holdings: any[]; prices: Record<
                                 {pnlPct != null
                                     ? `${positive ? "+" : ""}${pnlPct.toFixed(2)}%`
                                     : "—"}
+                            </td>
+                            <td className="px-3 py-1.5 text-right">
+                                <div className="inline-flex items-center gap-1.5 justify-end">
+                                    <div className="flex items-center border border-[#2a2e39] bg-[#131722] rounded px-1 py-0.5">
+                                        <button
+                                            type="button"
+                                            onClick={() => updateQty(h.id, currentExitQty - 1, qty)}
+                                            disabled={currentExitQty <= 1 || isExiting}
+                                            className="w-4 h-4 flex items-center justify-center text-gray-400 hover:text-white disabled:opacity-30 cursor-pointer text-xs select-none"
+                                        >
+                                            -
+                                        </button>
+                                        <input
+                                            type="number"
+                                            min="1"
+                                            max={qty}
+                                            value={currentExitQty}
+                                            onChange={(e) => {
+                                                const v = Number(e.target.value);
+                                                if (!isNaN(v)) updateQty(h.id, v, qty);
+                                            }}
+                                            disabled={isExiting}
+                                            className="w-10 text-center bg-transparent text-gray-200 text-xs focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                                        />
+                                        <button
+                                            type="button"
+                                            onClick={() => updateQty(h.id, currentExitQty + 1, qty)}
+                                            disabled={currentExitQty >= qty || isExiting}
+                                            className="w-4 h-4 flex items-center justify-center text-gray-400 hover:text-white disabled:opacity-30 cursor-pointer text-xs select-none"
+                                        >
+                                            +
+                                        </button>
+                                    </div>
+                                    <button
+                                        onClick={() => onExit(h.stockId, currentExitQty)}
+                                        disabled={isExiting || currentExitQty <= 0}
+                                        className="text-[11px] text-red-400 hover:text-red-300 disabled:opacity-50 px-2 py-0.5 rounded border border-red-900/40 hover:border-red-700 bg-red-950/20 cursor-pointer transition-colors"
+                                    >
+                                        {isExiting ? "Exiting..." : "Exit"}
+                                    </button>
+                                </div>
                             </td>
                         </tr>
                     );

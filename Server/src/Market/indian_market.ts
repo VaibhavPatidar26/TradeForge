@@ -2,6 +2,7 @@ import UpstoxClient from "upstox-js-sdk";
 import "dotenv/config";
 import redis, { setPrice } from "../redis/client.js";
 import { broadcastPrice } from "../websockets/sendToFront.js";
+import { checkAndQueueLimitOrders } from "../workers/buyLImitWorker.js";
 const token = process.env.UPSTOX_TOKEN;
 
 if (!token) {
@@ -67,10 +68,7 @@ streamer.on("message", async (data: Buffer) => {
                 await setPrice(instrumentKey, price);
                 broadcastPrice(instrumentKey, price);
 
-              await redis.publish("limit_price_update",JSON.stringify({
-                instrumentKey,
-                price
-              }))
+                checkAndQueueLimitOrders(instrumentKey, Number(price));
 
 
 

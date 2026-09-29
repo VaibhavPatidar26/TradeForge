@@ -1,6 +1,6 @@
-import prisma from "../lib/prisma.js";
+import prisma from "../../lib/prisma.js";
 import { Request, Response } from "express";
-import redis from "../redis/client.js";
+import redis from "../../redis/client.js";
 
 async function sellStock(req: Request, res: Response) {
     try {
@@ -87,59 +87,66 @@ async function sellStock(req: Request, res: Response) {
             }
         });
 
-        if (!holdings) {
-            return res.status(404).json({
-                message: "User doesn't hold this asset",
-                success: false
-            });
-        }
+        const currentQty = holdings ? Number(holdings.quantity) : 0;
+        const requiredMargin = total; // 1x margin for short selling
 
-        //Check holding quantity
-        const oldQuantity = Number(holdings.quantity);
-
-        if (oldQuantity < qty) {
-            return res.status(400).json({
-                message: "Insufficient quantity to sell",
-                success: false
-            });
-        }
-        const newQuantity = oldQuantity - qty;
-        //Database transaction
         const order = await prisma.$transaction(async (tx) => {
+            // =========================================================
+            // SCENARIO 1: LONG EXIT (User already owns positive shares)
+            // =========================================================
+            if (currentQty >= qty) {
+                // Increase user balance with proceeds
+                await tx.user.update({
+                    where: { id: userId },
+                    data: { balance: { increment: total } }
+                });
 
-            //Increase user's balance
-            await tx.user.update({
-                where: {
-                    id: userId
-                },
-                data: {
-                    balance: {
-                        increment: total
-                    }
+                const newQuantity = currentQty - qty;
+                if (newQuantity === 0) {
+                    await tx.holding.delete({ where: { id: holdings!.id } });
+                } else {
+                    await tx.holding.update({
+                        where: { id: holdings!.id },
+                        data: { quantity: newQuantity }
+                    });
                 }
-            });
-            // Update or delete holding
-            // avgPrice does NOT change when selling
-            if (newQuantity === 0) {
-
-                await tx.holding.delete({
-                    where: {
-                        id: holdings.id
-                    }
-                });
-
-            } else {
-
-                await tx.holding.update({
-                    where: {
-                        id: holdings.id
-                    },
-                    data: {
-                        quantity: newQuantity
-                    }
-                });
-
             }
+            // =========================================================
+            // SCENARIO 2: SHORT SELLING (User owns 0 or insufficient shares)
+            // =========================================================
+            else {
+                const freshUser = await tx.user.findUnique({ where: { id: userId } });
+                if (!freshUser || Number(freshUser.balance) < requiredMargin) {
+                    throw new Error(`Insufficient balance for short selling margin. Required: ₹${requiredMargin}`);
+                }
+
+                // Lock margin from balance
+                await tx.user.update({
+                    where: { id: userId },
+                    data: { balance: { decrement: requiredMargin } }
+                });
+
+                // Update or create holding with negative quantity
+                if (holdings) {
+                    await tx.holding.update({
+                        where: { id: holdings.id },
+                        data: {
+                            quantity: { decrement: qty },
+                            avgPrice: price
+                        }
+                    });
+                } else {
+                    await tx.holding.create({
+                        data: {
+                            userId,
+                            stockId,
+                            quantity: -qty,
+                            avgPrice: price
+                        }
+                    });
+                }
+            }
+
             // Create order
             const newOrder = await tx.order.create({
                 data: {
@@ -154,7 +161,7 @@ async function sellStock(req: Request, res: Response) {
                 }
             });
 
-            // Create transaction
+            // Create transaction audit
             await tx.transaction.create({
                 data: {
                     type: "SELL",
