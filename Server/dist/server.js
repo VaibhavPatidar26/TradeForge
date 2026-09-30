@@ -29,13 +29,22 @@ app.get("/", async (req, res) => {
 app.use("/api/users", userRouter);
 app.use("/api/orders", orderRouter);
 app.use("/api/search", findRouter);
-// app.use("/api/watchlist",findRouter);
 app.use('/api/watchlist', createRouter);
+import "./workers/orderWorker.js";
+import { runStartupReconciliation } from "./workers/reconciliationWorker.js";
 const PORT = process.env.PORT || 3000;
-await redis.connect().then(() => {
+if (!redis.isOpen) {
+    await redis.connect();
     console.log("connected on redis");
-});
+}
 await startWebSocketServer();
+// Run startup reconciliation before starting live streams
+try {
+    await runStartupReconciliation();
+}
+catch (error) {
+    console.error("Startup reconciliation error:", error);
+}
 await Upstoxconnect();
 app.listen(PORT, () => {
     console.log(`server start on ${PORT}`);

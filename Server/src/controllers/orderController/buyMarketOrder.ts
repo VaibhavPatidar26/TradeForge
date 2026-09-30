@@ -22,8 +22,8 @@ export async function buyMarketOrder(req: Request, res: Response) {
 
         // 2. Find the asset
         const stock = await prisma.stocks.findUnique({
-            where:{
-                instrument_key:stockId
+            where: {
+                instrument_key: stockId
             }
         });
 
@@ -95,7 +95,9 @@ export async function buyMarketOrder(req: Request, res: Response) {
                 // If user bought more than the short, deduct cash for the excess long quantity
                 if (remainingLongQty > 0) {
                     const extraLongCost = remainingLongQty * price;
-                    if (Number(user.balance) + returnedMarginAndPnl < extraLongCost) {
+                    // Use post-return balance (margin was already credited back above)
+                    const postReturnBalance = Number(user.balance) + returnedMarginAndPnl;
+                    if (postReturnBalance < extraLongCost) {
                         throw new Error("Insufficient balance for additional long purchase");
                     }
                     await tx.user.update({

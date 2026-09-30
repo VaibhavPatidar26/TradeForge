@@ -21,10 +21,14 @@ export default async function startWebSocketServer() {
             message: "Welcome to TradeForge"
         }));
         ws.on("message", async function (data) {
-            console.log("MESSAGE RECEIVED:", data.toString());
-            const message = JSON.parse(data.toString());
-            console.log("MESSAGE OBJECT:", message);
-            console.log("MESSAGE TYPE:", message.type);
+            let message;
+            try {
+                message = JSON.parse(data.toString());
+            }
+            catch (err) {
+                console.error("[WebSocket] Malformed message received:", data.toString());
+                return;
+            }
             if (message.type === "auth_connection") {
                 const token = message.token;
                 try {

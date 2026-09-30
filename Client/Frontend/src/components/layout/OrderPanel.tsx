@@ -82,10 +82,6 @@ export default function OrderPanel() {
 
   async function handleSell() {
     if (!token || !currentStock || !qty || qty <= 0) return;
-    if (qty > holdingQty) {
-      setStatusMessage({ type: "error", text: `You only hold ${holdingQty} shares` });
-      return;
-    }
     if (orderMode === "LIMIT" && (!limitPrice || limitPrice <= 0)) {
       setStatusMessage({ type: "error", text: "Please enter a valid limit price" });
       return;
@@ -177,9 +173,13 @@ export default function OrderPanel() {
             </div>
             {/* Holdings & Balance rows */}
             <div className="pt-2 border-t border-[#1f2630] flex items-center justify-between text-xs">
-              <span className="text-gray-500">Holdings:</span>
-              <span className={`font-medium tabular-nums ${holdingQty > 0 ? "text-emerald-400" : "text-gray-400"}`}>
-                {holdingQty} shares
+              <span className="text-gray-500">Position / Holdings:</span>
+              <span className={`font-medium tabular-nums ${holdingQty > 0 ? "text-emerald-400" : holdingQty < 0 ? "text-red-400" : "text-gray-400"}`}>
+                {holdingQty > 0
+                  ? `${holdingQty} shares (LONG)`
+                  : holdingQty < 0
+                  ? `${Math.abs(holdingQty)} shares (SHORT)`
+                  : "0 shares"}
               </span>
             </div>
             <div className="pt-1.5 flex items-center justify-between text-xs">
@@ -203,13 +203,13 @@ export default function OrderPanel() {
           <div>
             <div className="flex items-center justify-between mb-1">
               <label className="text-[11px] text-gray-400 font-medium uppercase tracking-wider">Quantity</label>
-              {holdingQty > 0 && (
+              {holdingQty !== 0 && (
                 <button
                   type="button"
-                  onClick={() => setQty(holdingQty)}
+                  onClick={() => setQty(Math.abs(holdingQty))}
                   className="text-[11px] text-emerald-400 hover:text-emerald-300 font-medium transition-colors"
                 >
-                  Max ({holdingQty})
+                  {holdingQty > 0 ? `Max (${holdingQty})` : `Cover All (${Math.abs(holdingQty)})`}
                 </button>
               )}
             </div>
@@ -286,14 +286,14 @@ export default function OrderPanel() {
           disabled={!currentStock || !qty || qty <= 0 || loading || (orderMode === "LIMIT" && (!limitPrice || limitPrice <= 0))}
           className="flex-1 bg-[#089981] hover:bg-[#067a67] disabled:opacity-40 disabled:cursor-not-allowed text-white font-semibold py-2.5 rounded transition-colors text-sm"
         >
-          {loading ? "…" : "BUY"}
+          {loading ? "…" : holdingQty < 0 ? "BUY (COVER)" : "BUY"}
         </button>
         <button
           onClick={handleSell}
-          disabled={!currentStock || !qty || qty <= 0 || loading || holdingQty <= 0 || (orderMode === "LIMIT" && (!limitPrice || limitPrice <= 0))}
+          disabled={!currentStock || !qty || qty <= 0 || loading || (orderMode === "LIMIT" && (!limitPrice || limitPrice <= 0))}
           className="flex-1 bg-[#f23645] hover:bg-[#c22b37] disabled:opacity-40 disabled:cursor-not-allowed text-white font-semibold py-2.5 rounded transition-colors text-sm"
         >
-          {loading ? "…" : "SELL"}
+          {loading ? "…" : holdingQty <= 0 ? "SHORT SELL" : "SELL"}
         </button>
       </div>
     </div>

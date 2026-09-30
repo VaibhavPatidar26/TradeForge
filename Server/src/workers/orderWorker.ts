@@ -1,7 +1,7 @@
 import { Worker, Job } from "bullmq";
 import prisma from "../lib/prisma.js";
 import { type Order } from "../queues/orderQueue.js";
-import redis from "../redis/client.js";
+import { redisConnection } from "../redis/client.js";
 
 export const orderWorker = new Worker<Order>(
     "OrderExecutionQueue",
@@ -58,6 +58,7 @@ export const orderWorker = new Worker<Order>(
                 if (currentHoldingQty < 0) {
                     const shortQty = Math.abs(currentHoldingQty);
                     const coverQty = Math.min(shortQty, orderQty);
+                    const remainingLongQty = orderQty - coverQty;
                     const shortPrice = Number(existingHolding!.avgPrice);
                     
                     // PnL on short = (Short Price - Buy Back Price) * Qty
@@ -68,6 +69,15 @@ export const orderWorker = new Worker<Order>(
                         where: { id: order.userId },
                         data: { balance: { increment: returnedMarginAndPnl } }
                     });
+
+                    // If buying more than short qty, deduct for extra long portion
+                    if (remainingLongQty > 0) {
+                        const extraLongCost = remainingLongQty * execPrice;
+                        await tx.user.update({
+                            where: { id: order.userId },
+                            data: { balance: { decrement: extraLongCost } }
+                        });
+                    }
 
                     const newHoldingQty = currentHoldingQty + orderQty;
                     if (newHoldingQty === 0) {
@@ -126,40 +136,54 @@ export const orderWorker = new Worker<Order>(
                 });
 
                 const currentQty = holding ? Number(holding.quantity) : 0;
-                const isShortSell = order.total !== null && Number(order.total) > 0;
 
-                // CASE A: Standard Long Exit
-                if (!isShortSell && currentQty >= orderQty) {
+                // Determine how much of this order is a long exit vs short entry
+                const longExitQty = currentQty > 0 ? Math.min(currentQty, orderQty) : 0;
+                const excessShortQty = orderQty - longExitQty;
+
+                // CASE A: Has long shares to sell — credit proceeds
+                if (longExitQty > 0) {
+                    const exitProceeds = longExitQty * execPrice;
                     await tx.user.update({
                         where: { id: order.userId },
-                        data: { balance: { increment: totalAmount } }
+                        data: { balance: { increment: exitProceeds } }
                     });
+                }
 
-                    if (currentQty === orderQty) {
-                        await tx.holding.delete({ where: { id: holding!.id } });
-                    } else {
-                        await tx.holding.update({
-                            where: { id: holding!.id },
-                            data: { quantity: { decrement: orderQty } }
-                        });
-                    }
-                } 
-                // CASE B: Short Sell Entry (Margin was locked upfront)
-                else {
+                // Update holding after long exit portion
+                const newQty = currentQty - orderQty;
+                if (newQty === 0) {
                     if (holding) {
+                        await tx.holding.delete({ where: { id: holding.id } });
+                    }
+                } else if (newQty > 0) {
+                    // Still long, just reduced
+                    await tx.holding.update({
+                        where: { id: holding!.id },
+                        data: { quantity: newQty }
+                    });
+                } else {
+                    // Flips into short (or deepens existing short).
+                    // Margin for the short portion was already locked at order creation time.
+                    if (holding) {
+                        const prevAbsQty = currentQty < 0 ? Math.abs(currentQty) : 0;
+                        const prevAvg = currentQty < 0 ? Number(holding.avgPrice) : execPrice;
+                        const newAbsQty = Math.abs(newQty);
+                        const newAvg = prevAbsQty > 0
+                            ? ((prevAbsQty * prevAvg) + (excessShortQty * execPrice)) / newAbsQty
+                            : execPrice;
+
                         await tx.holding.update({
                             where: { id: holding.id },
-                            data: {
-                                quantity: { decrement: orderQty },
-                                avgPrice: execPrice
-                            }
+                            data: { quantity: newQty, avgPrice: newAvg }
                         });
                     } else {
+                        // Net new short position (no previous holding)
                         await tx.holding.create({
                             data: {
                                 userId: order.userId,
                                 stockId: order.stockId,
-                                quantity: -orderQty,
+                                quantity: newQty,
                                 avgPrice: execPrice
                             }
                         });
@@ -198,7 +222,7 @@ export const orderWorker = new Worker<Order>(
         });
     },
     {
-        connection: redis as any,
+        connection: redisConnection,
         concurrency: 25, // Up to 25 parallel executions without overloading DB pool
     }
 );

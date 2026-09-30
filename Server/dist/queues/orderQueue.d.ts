@@ -1,9 +1,6 @@
 import { Queue } from "bullmq";
-import { redisConnection } from "../redis/client.js";
-
 export type OrderSide = "BUY" | "SELL";
 export type OrderType = "LIMIT" | "MARKET" | "SL" | "SLM" | "GTT";
-
 export type Order = {
     id: string;
     orderSide: OrderSide;
@@ -15,7 +12,6 @@ export type Order = {
     orderExpiry?: string;
     expiresAt?: Date;
 };
-
-const orderQueue = new Queue<Order>("OrderExecutionQueue", { connection: redisConnection });
-
+declare const orderQueue: Queue<Order, any, string, Order, any, string, import("bullmq").RedisQueueBackend, import("bullmq").ConnectionOptions>;
 export default orderQueue;
+//# sourceMappingURL=orderQueue.d.ts.map

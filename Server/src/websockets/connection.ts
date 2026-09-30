@@ -33,14 +33,14 @@ export default async function startWebSocketServer() {
 }));
 
         ws.on("message", async function (data) {
+            let message: any;
+            try {
+                message = JSON.parse(data.toString());
+            } catch (err) {
+                console.error("[WebSocket] Malformed message received:", data.toString());
+                return;
+            }
 
-            console.log("MESSAGE RECEIVED:", data.toString());
-
-            const message = JSON.parse(data.toString());
-
-            console.log("MESSAGE OBJECT:", message);
-            console.log("MESSAGE TYPE:", message.type);
-            
             if (message.type === "auth_connection") {
 
                 const token = message.token;

@@ -69,20 +69,31 @@ export function Portfolio() {
     let totalCurrent  = 0;
 
     const enriched = holdings.map(function (holding) {
+        const rawQty       = Number(holding.quantity);
+        const isShort      = rawQty < 0;
+        const absQty       = Math.abs(rawQty);
+        const avgPrice     = Number(holding.avgPrice);
         const currentPrice = livePrice[holding.stock.instrument_key];
-        const invested     = holding.avgPrice * holding.quantity;
-        const current      = currentPrice !== undefined
-            ? currentPrice * holding.quantity
-            : invested; // fallback to invested when price not yet available
 
-        const pnl        = current - invested;
-        const pnlPct     = invested > 0 ? (pnl / invested) * 100 : 0;
-        const hasLive    = currentPrice !== undefined;
+        // Invested / Locked Margin is always positive
+        const invested = avgPrice * absQty;
+
+        // PnL:
+        // Long:  (Current - Avg) * Qty (profits when price rises)
+        // Short: (Avg - Current) * Qty (profits when price drops)
+        const hasLive = currentPrice !== undefined;
+        const pnl = hasLive
+            ? (isShort ? (avgPrice - currentPrice) * absQty : (currentPrice - avgPrice) * absQty)
+            : 0;
+
+        // Current value = For Long: CurrentPrice * Qty; For Short: Locked Margin + PnL
+        const current = isShort ? (invested + pnl) : (hasLive ? currentPrice * absQty : invested);
+        const pnlPct  = invested > 0 ? (pnl / invested) * 100 : 0;
 
         totalInvested += invested;
         totalCurrent  += current;
 
-        return { ...holding, currentPrice, invested, current, pnl, pnlPct, hasLive };
+        return { ...holding, rawQty, isShort, absQty, avgPrice, currentPrice, invested, current, pnl, pnlPct, hasLive };
     });
 
     const totalPnL    = totalCurrent - totalInvested;
@@ -133,7 +144,7 @@ export function Portfolio() {
                                     {isProfit ? (
                                         <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none"
                                             stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                                            <polyline points="18 15 12 9 6 15" />
+                                             <polyline points="18 15 12 9 6 15" />
                                         </svg>
                                     ) : (
                                         <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none"
@@ -143,17 +154,17 @@ export function Portfolio() {
                                     )}
                                     {isProfit ? "+" : ""}{fmt(totalPnL)} ({isProfit ? "+" : ""}{totalPnLPct.toFixed(2)}%)
                                 </span>
-                                <span className="text-[11px] text-gray-500">Invested ₹{fmt(totalInvested)}</span>
+                                <span className="text-[11px] text-gray-500">Invested/Margin ₹{fmt(totalInvested)}</span>
                             </div>
 
                             {/* Mini stats row */}
                             <div className="grid grid-cols-2 gap-2 mt-3 pt-3 border-t border-white/5">
                                 <div>
-                                    <p className="text-[10px] text-gray-600 mb-0.5">Holdings</p>
+                                    <p className="text-[10px] text-gray-600 mb-0.5">Positions &amp; Holdings</p>
                                     <p className="text-sm font-medium text-gray-300">{holdings.length}</p>
                                 </div>
                                 <div>
-                                    <p className="text-[10px] text-gray-600 mb-0.5">Day P&amp;L</p>
+                                    <p className="text-[10px] text-gray-600 mb-0.5">Net P&amp;L</p>
                                     <p className={`text-sm font-medium ${isProfit ? "text-emerald-400" : "text-red-400"}`}>
                                         {isProfit ? "+" : ""}₹{fmt(totalPnL)}
                                     </p>
@@ -182,12 +193,21 @@ export function Portfolio() {
                                         }}
                                         className="cursor-pointer rounded-lg bg-[#11161c] border border-[#1f2630] hover:border-[#2a3340] transition-colors p-3"
                                     >
-                                        {/* Row 1 — Name + Current price */}
+                                        {/* Row 1 — Name + Position Badge + Current price */}
                                         <div className="flex items-start justify-between gap-2 mb-2">
                                             <div className="min-w-0">
-                                                <p className="text-[13px] font-semibold text-gray-200 truncate leading-tight">
-                                                    {holding.stock.name}
-                                                </p>
+                                                <div className="flex items-center gap-1.5">
+                                                    <p className="text-[13px] font-semibold text-gray-200 truncate leading-tight">
+                                                        {holding.stock.name}
+                                                    </p>
+                                                    <span className={`px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider ${
+                                                        holding.isShort
+                                                            ? "bg-red-500/15 text-red-400 border border-red-500/30"
+                                                            : "bg-emerald-500/15 text-emerald-400 border border-emerald-500/30"
+                                                    }`}>
+                                                        {holding.isShort ? "SHORT" : "LONG"}
+                                                    </span>
+                                                </div>
                                                 <p className="text-[10px] text-gray-500 mt-0.5 flex items-center gap-1.5">
                                                     <span>{holding.stock.trading_symbol}</span>
                                                     <span className="rounded border border-[#252b33] px-1 py-px text-[9px] uppercase tracking-wide">
@@ -215,18 +235,18 @@ export function Portfolio() {
                                         <div className="grid grid-cols-2 gap-x-3 gap-y-1 mb-2">
                                             <div className="flex justify-between">
                                                 <span className="text-[10px] text-gray-600">Qty</span>
-                                                <span className="text-[10px] text-gray-400 tabular-nums">{holding.quantity}</span>
+                                                <span className="text-[10px] text-gray-400 tabular-nums">{holding.absQty}</span>
                                             </div>
                                             <div className="flex justify-between">
-                                                <span className="text-[10px] text-gray-600">Avg</span>
+                                                <span className="text-[10px] text-gray-600">Avg Price</span>
                                                 <span className="text-[10px] text-gray-400 tabular-nums">₹{fmt(holding.avgPrice)}</span>
                                             </div>
                                             <div className="flex justify-between">
-                                                <span className="text-[10px] text-gray-600">Invested</span>
+                                                <span className="text-[10px] text-gray-600">{holding.isShort ? "Locked Margin" : "Invested"}</span>
                                                 <span className="text-[10px] text-gray-400 tabular-nums">₹{fmt(holding.invested)}</span>
                                             </div>
                                             <div className="flex justify-between">
-                                                <span className="text-[10px] text-gray-600">Current</span>
+                                                <span className="text-[10px] text-gray-600">{holding.isShort ? "Est. Margin+PnL" : "Current Value"}</span>
                                                 <span className="text-[10px] text-gray-400 tabular-nums">
                                                     {holding.hasLive ? `₹${fmt(holding.current)}` : "—"}
                                                 </span>
@@ -235,7 +255,7 @@ export function Portfolio() {
 
                                         {/* Row 3 — PnL pill */}
                                         <div className={`flex items-center justify-between rounded-md px-2 py-1.5 ${positive ? "bg-emerald-500/8" : "bg-red-500/8"}`}>
-                                            <span className="text-[10px] text-gray-600">Net P&amp;L</span>
+                                            <span className="text-[10px] text-gray-600">Unrealized P&amp;L</span>
                                             <div className="flex items-center gap-2">
                                                 <span className={`text-[11px] font-semibold tabular-nums ${positive ? "text-emerald-400" : "text-red-400"}`}>
                                                     {positive ? "+" : ""}₹{fmt(holding.pnl)}

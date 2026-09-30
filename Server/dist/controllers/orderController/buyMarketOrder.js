@@ -48,22 +48,7 @@ export async function buyMarketOrder(req, res) {
             if (!user) {
                 throw new Error("User not found");
             }
-            // 5. Check balance
-            if (Number(user.balance) < total) {
-                throw new Error("Insufficient balance");
-            }
-            // 6. Deduct money
-            await tx.user.update({
-                where: {
-                    id: userId
-                },
-                data: {
-                    balance: {
-                        decrement: total
-                    }
-                }
-            });
-            // 7. Check existing holding
+            // Check existing holding
             const holding = await tx.holding.findUnique({
                 where: {
                     userId_stockId: {
@@ -72,34 +57,92 @@ export async function buyMarketOrder(req, res) {
                     }
                 }
             });
-            if (holding) {
-                // Existing holding
-                const oldQuantity = Number(holding.quantity);
-                const oldAvgPrice = Number(holding.avgPrice);
-                const newQuantity = oldQuantity + qty;
-                // Weighted average price
-                const newAvgPrice = (oldQuantity * oldAvgPrice +
-                    qty * price) / newQuantity;
-                await tx.holding.update({
-                    where: {
-                        id: holding.id
-                    },
-                    data: {
-                        quantity: newQuantity,
-                        avgPrice: newAvgPrice
-                    }
+            const currentHoldingQty = holding ? Number(holding.quantity) : 0;
+            // =========================================================
+            // SCENARIO 1: BUY TO COVER A SHORT POSITION (currentQty < 0)
+            // =========================================================
+            if (currentHoldingQty < 0) {
+                const shortQty = Math.abs(currentHoldingQty);
+                const coverQty = Math.min(shortQty, qty);
+                const remainingLongQty = qty - coverQty;
+                const shortPrice = Number(holding.avgPrice);
+                // PnL = (Short Price - Buy Back Price) * Qty
+                const pnl = (shortPrice - price) * coverQty;
+                const returnedMarginAndPnl = (shortPrice * coverQty) + pnl;
+                // Return locked margin + profit/loss to user balance
+                await tx.user.update({
+                    where: { id: userId },
+                    data: { balance: { increment: returnedMarginAndPnl } }
                 });
+                // If user bought more than the short, deduct cash for the excess long quantity
+                if (remainingLongQty > 0) {
+                    const extraLongCost = remainingLongQty * price;
+                    // Use post-return balance (margin was already credited back above)
+                    const postReturnBalance = Number(user.balance) + returnedMarginAndPnl;
+                    if (postReturnBalance < extraLongCost) {
+                        throw new Error("Insufficient balance for additional long purchase");
+                    }
+                    await tx.user.update({
+                        where: { id: userId },
+                        data: { balance: { decrement: extraLongCost } }
+                    });
+                }
+                // Update holding
+                const newHoldingQty = currentHoldingQty + qty;
+                if (newHoldingQty === 0) {
+                    await tx.holding.delete({ where: { id: holding.id } });
+                }
+                else if (newHoldingQty > 0) {
+                    // Flips from short to long
+                    await tx.holding.update({
+                        where: { id: holding.id },
+                        data: { quantity: newHoldingQty, avgPrice: price }
+                    });
+                }
+                else {
+                    // Still short, just reduced
+                    await tx.holding.update({
+                        where: { id: holding.id },
+                        data: { quantity: newHoldingQty }
+                    });
+                }
             }
+            // =========================================================
+            // SCENARIO 2: NORMAL LONG PURCHASE (currentQty >= 0)
+            // =========================================================
             else {
-                // First time buying this asset
-                await tx.holding.create({
-                    data: {
-                        userId,
-                        stockId,
-                        quantity: qty,
-                        avgPrice: price
-                    }
+                // Check balance
+                if (Number(user.balance) < total) {
+                    throw new Error("Insufficient balance");
+                }
+                // Deduct cash
+                await tx.user.update({
+                    where: { id: userId },
+                    data: { balance: { decrement: total } }
                 });
+                if (holding) {
+                    const oldQuantity = Number(holding.quantity);
+                    const oldAvgPrice = Number(holding.avgPrice);
+                    const newQuantity = oldQuantity + qty;
+                    const newAvgPrice = ((oldQuantity * oldAvgPrice) + (qty * price)) / newQuantity;
+                    await tx.holding.update({
+                        where: { id: holding.id },
+                        data: {
+                            quantity: newQuantity,
+                            avgPrice: newAvgPrice
+                        }
+                    });
+                }
+                else {
+                    await tx.holding.create({
+                        data: {
+                            userId,
+                            stockId,
+                            quantity: qty,
+                            avgPrice: price
+                        }
+                    });
+                }
             }
             // 8. Create order
             const newOrder = await tx.order.create({

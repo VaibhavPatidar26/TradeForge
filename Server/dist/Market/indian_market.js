@@ -1,7 +1,8 @@
 import UpstoxClient from "upstox-js-sdk";
 import "dotenv/config";
-import redis, { setPrice } from "../redis/client.js";
+import { setPrice } from "../redis/client.js";
 import { broadcastPrice } from "../websockets/sendToFront.js";
+import { checkAndQueueLimitOrders } from "../workers/buyLImitWorker.js";
 const token = process.env.UPSTOX_TOKEN;
 if (!token) {
     throw new Error("UPSTOX_ACCESS_TOKEN is missing");
@@ -39,7 +40,6 @@ streamer.on("message", async (data) => {
     try {
         const message = data.toString("utf-8");
         const parsedMessage = JSON.parse(message);
-        console.log(JSON.stringify(parsedMessage, null, 2));
         if (!parsedMessage.feeds)
             return;
         for (const [instrumentKey, feed] of Object.entries(parsedMessage.feeds)) {
@@ -47,10 +47,7 @@ streamer.on("message", async (data) => {
             if (price !== undefined) {
                 await setPrice(instrumentKey, price);
                 broadcastPrice(instrumentKey, price);
-                await redis.publish("limit_price_update", JSON.stringify({
-                    instrumentKey,
-                    price
-                }));
+                checkAndQueueLimitOrders(instrumentKey, Number(price));
             }
         }
     }

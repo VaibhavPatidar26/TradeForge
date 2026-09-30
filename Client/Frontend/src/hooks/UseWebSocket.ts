@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { useAuthStore } from "../store/authStore";
 import { usePriceStore } from "../store/priceStore";
 import { useOrdersStore } from "../store/ordersStore";
@@ -7,50 +7,79 @@ import { useUserStore } from "../store/userStore";
 
 function useWebSocket() {
     const token = useAuthStore((s) => s.token);
+    const socketRef = useRef<WebSocket | null>(null);
+    const reconnectTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-    useEffect(function () {
+    useEffect(() => {
         if (!token) return;
 
-        const ws = new WebSocket(import.meta.env.VITE_SOCKET_URL);
+        let isUnmounted = false;
 
-        ws.onopen = function () {
-            console.log("Connected from frontend");
-            ws.send(JSON.stringify({ token, type: "auth_connection" }));
-        };
+        function connect() {
+            if (isUnmounted) return;
 
-        ws.onmessage = function (event) {
-            try {
-                const message = JSON.parse(event.data);
+            const socketUrl = import.meta.env.VITE_SOCKET_URL || "ws://localhost:8080";
+            const ws = new WebSocket(socketUrl);
+            socketRef.current = ws;
 
-                // ── Live price tick ──────────────────────────────────────
-                if (message.type === "PRICE_UPDATE") {
-                    usePriceStore.getState().updatePrice(message.instrumentKey, message.price);
+            ws.onopen = function () {
+                console.log("[WebSocket] Connected to server");
+                ws.send(JSON.stringify({ token, type: "auth_connection" }));
+            };
+
+            ws.onmessage = function (event) {
+                try {
+                    const message = JSON.parse(event.data);
+
+                    // ── Live price tick ──────────────────────────────────────
+                    if (message.type === "PRICE_UPDATE") {
+                        usePriceStore.getState().updatePrice(message.instrumentKey, message.price);
+                    }
+
+                    // ── Limit order executed by the worker ───────────────────
+                    if (message.type === "LIMIT_ORDER_EXECUTED") {
+                        useOrdersStore.getState().updateOrderStatus(message.orderId, "COMPLETED", message.price);
+                        usePortfolioStore.getState().fetchPortfolio(token!);
+                        useOrdersStore.getState().fetchTodayOrders(token!);
+                        useUserStore.getState().fetchUser(token!);
+                    }
+
+                } catch (_) {
+                    // Safely ignore non-JSON welcome messages
                 }
+            };
 
-                // ── Limit order executed by the worker ───────────────────
-                if (message.type === "LIMIT_ORDER_EXECUTED") {
-                    useOrdersStore.getState().updateOrderStatus(message.orderId, "COMPLETED", message.price);
-                    usePortfolioStore.getState().fetchPortfolio(token);
-                    useOrdersStore.getState().fetchTodayOrders(token);
-                    useUserStore.getState().fetchUser(token);
+            ws.onerror = function (e) {
+                console.error("[WebSocket] Error:", e);
+            };
+
+            ws.onclose = function () {
+                console.log("[WebSocket] Disconnected from server.");
+                if (!isUnmounted) {
+                    // Reconnect after 3 seconds
+                    reconnectTimerRef.current = setTimeout(() => {
+                        console.log("[WebSocket] Attempting reconnect...");
+                        connect();
+                    }, 3000);
                 }
+            };
+        }
 
-            } catch (_) {
-                // Safely ignore non-JSON welcome messages
+        connect();
+
+        return function cleanup() {
+            isUnmounted = true;
+            if (reconnectTimerRef.current) {
+                clearTimeout(reconnectTimerRef.current);
             }
-        };
-
-        ws.onerror = function (e) {
-            console.error("WebSocket error:", e);
-        };
-
-        return function () {
-            if (ws.readyState === WebSocket.OPEN) {
-                ws.close();
-            } else if (ws.readyState === WebSocket.CONNECTING) {
-                ws.onopen = function () {
-                    ws.close();
-                };
+            if (socketRef.current) {
+                if (socketRef.current.readyState === WebSocket.OPEN) {
+                    socketRef.current.close();
+                } else if (socketRef.current.readyState === WebSocket.CONNECTING) {
+                    socketRef.current.onopen = function () {
+                        socketRef.current?.close();
+                    };
+                }
             }
         };
     }, [token]);

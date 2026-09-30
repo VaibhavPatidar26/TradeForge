@@ -56,9 +56,6 @@ streamer.on("message", async (data: Buffer) => {
     try {
         const message = data.toString("utf-8");
         const parsedMessage = JSON.parse(message);
-        console.log(
-            JSON.stringify(parsedMessage, null, 2)
-        );
         if (!parsedMessage.feeds) return;
 
         for (const [instrumentKey, feed] of Object.entries(parsedMessage.feeds)) {

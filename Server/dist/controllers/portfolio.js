@@ -1,34 +1,17 @@
 import prisma from "../lib/prisma.js";
 export async function fetchPortfolio(req, res) {
     const userId = req.userId;
+    if (!userId) {
+        return res.status(401).json({
+            message: "Unauthorized",
+            success: false
+        });
+    }
     try {
-        if (!userId) {
-            return res.status(401).json({
-                message: "invalid user",
-                success: false
-            });
-        }
-        //user found fetch his holdings;
         const userCurrentHoldings = await prisma.holding.findMany({
-            where: {
-                userId: userId
-            },
-            include: {
-                stock: true
-            }
+            where: { userId },
+            include: { stock: true }
         });
-        //now we found the holdings we fetch the asset details from it.
-        //first fetch the assetIds so get the assest name and then fetch live prices from redis
-        const stockIds = await userCurrentHoldings.map((item) => item.stockId);
-        const OwnedStocks = await prisma.stocks.findMany({
-            where: {
-                instrument_key: {
-                    in: stockIds
-                }
-            }
-        });
-        //return the complete data OwnedStocks
-        console.log(OwnedStocks);
         return res.status(200).json({
             message: "Portfolio fetched successfully",
             success: true,
@@ -36,9 +19,9 @@ export async function fetchPortfolio(req, res) {
         });
     }
     catch (err) {
-        console.log(err);
+        console.error("[fetchPortfolio] Error:", err);
         return res.status(500).json({
-            message: "server failed",
+            message: "Server error fetching portfolio",
             success: false
         });
     }

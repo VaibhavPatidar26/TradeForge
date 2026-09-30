@@ -43,17 +43,17 @@ async function sellLimitOrder(req, res) {
         if (!stock) {
             return res.status(404).json({ message: "Stock not found" });
         }
-        // 3️⃣  Check the user holds enough shares
+        // 3️⃣  Check user holdings and determine if this is a short sell
         const holding = await prisma.holding.findUnique({
             where: {
                 userId_stockId: { userId, stockId }
             }
         });
-        if (!holding || Number(holding.quantity) < qty) {
-            return res.status(400).json({
-                message: `Insufficient shares. You hold ${holding ? holding.quantity : 0} shares.`
-            });
-        }
+        const currentQty = holding ? Number(holding.quantity) : 0;
+        const longExitQty = currentQty > 0 ? Math.min(currentQty, qty) : 0;
+        const excessShortQty = qty - longExitQty;
+        const isShortSell = excessShortQty > 0;
+        const requiredMargin = excessShortQty * limitPrice;
         // 4️⃣  Get current market price from Redis
         const redisPrice = await redis.get(stock.instrument_key);
         if (!redisPrice) {
@@ -61,33 +61,81 @@ async function sellLimitOrder(req, res) {
         }
         const currentMarketPrice = Number(redisPrice);
         const result = await prisma.$transaction(async (tx) => {
-            // 4a ─ Immediate execution path ───────────────────────────────────
-            //  Market is already at or above the user's limit → fill right now.
-            if (currentMarketPrice >= limitPrice) {
-                const proceeds = currentMarketPrice * qty;
-                // Reduce / delete holding
-                const freshHolding = await tx.holding.findUnique({
-                    where: { userId_stockId: { userId, stockId } }
-                });
-                if (!freshHolding || Number(freshHolding.quantity) < qty) {
-                    throw new Error("Insufficient shares (race condition)");
+            // Verify margin if short selling excess portion
+            if (isShortSell) {
+                const user = await tx.user.findUnique({ where: { id: userId } });
+                if (!user || Number(user.balance) < requiredMargin) {
+                    throw new Error(`Insufficient balance for short selling margin. Required: ₹${requiredMargin}`);
                 }
-                const newQty = Number(freshHolding.quantity) - qty;
-                if (newQty === 0) {
-                    await tx.holding.delete({ where: { id: freshHolding.id } });
-                }
-                else {
-                    await tx.holding.update({
-                        where: { id: freshHolding.id },
-                        data: { quantity: newQty }
-                    });
-                }
-                // Credit the user's balance
+                // Lock margin upfront
                 await tx.user.update({
                     where: { id: userId },
-                    data: { balance: { increment: proceeds } }
+                    data: { balance: { decrement: requiredMargin } }
                 });
-                // Create order (COMPLETED immediately)
+            }
+            // 4a ─ Immediate execution path ───────────────────────────────────
+            if (currentMarketPrice >= limitPrice) {
+                const proceeds = currentMarketPrice * qty;
+                // Handle Long portion exit (if any)
+                if (longExitQty > 0) {
+                    const freshHolding = await tx.holding.findUnique({
+                        where: { userId_stockId: { userId, stockId } }
+                    });
+                    if (!freshHolding || Number(freshHolding.quantity) < longExitQty) {
+                        throw new Error("Insufficient shares (race condition)");
+                    }
+                    const exitProceeds = longExitQty * currentMarketPrice;
+                    await tx.user.update({
+                        where: { id: userId },
+                        data: { balance: { increment: exitProceeds } }
+                    });
+                    const newQty = Number(freshHolding.quantity) - qty;
+                    if (newQty === 0) {
+                        await tx.holding.delete({ where: { id: freshHolding.id } });
+                    }
+                    else if (newQty < 0) {
+                        await tx.holding.update({
+                            where: { id: freshHolding.id },
+                            data: { quantity: newQty, avgPrice: currentMarketPrice }
+                        });
+                    }
+                    else {
+                        await tx.holding.update({
+                            where: { id: freshHolding.id },
+                            data: { quantity: newQty }
+                        });
+                    }
+                }
+                else {
+                    // 100% Short Sell Entry immediate execution
+                    const freshHolding = await tx.holding.findUnique({
+                        where: { userId_stockId: { userId, stockId } }
+                    });
+                    if (freshHolding) {
+                        const oldAbs = Math.abs(Number(freshHolding.quantity));
+                        const oldAvg = Number(freshHolding.avgPrice);
+                        const newAbs = oldAbs + qty;
+                        const newAvg = (oldAbs * oldAvg + qty * currentMarketPrice) / newAbs;
+                        await tx.holding.update({
+                            where: { id: freshHolding.id },
+                            data: {
+                                quantity: -newAbs,
+                                avgPrice: newAvg
+                            }
+                        });
+                    }
+                    else {
+                        await tx.holding.create({
+                            data: {
+                                userId,
+                                stockId,
+                                quantity: -qty,
+                                avgPrice: currentMarketPrice
+                            }
+                        });
+                    }
+                }
+                // Create order (COMPLETED)
                 const newOrder = await tx.order.create({
                     data: {
                         side: "SELL",
@@ -101,7 +149,6 @@ async function sellLimitOrder(req, res) {
                         stockId
                     }
                 });
-                // Create transaction record
                 await tx.transaction.create({
                     data: {
                         type: "SELL",
@@ -116,8 +163,6 @@ async function sellLimitOrder(req, res) {
                 return { order: newOrder, immediate: true };
             }
             // 4b ─ Deferred execution path ─────────────────────────────────────
-            //  Market price is below the limit → place as OPEN.
-            //  The worker will execute when price rises to limitPrice.
             const newOrder = await tx.order.create({
                 data: {
                     side: "SELL",
@@ -125,6 +170,7 @@ async function sellLimitOrder(req, res) {
                     orderType: "LIMIT",
                     quantity: qty,
                     limitPrice,
+                    total: isShortSell ? requiredMargin : null, // Record locked margin if short
                     userId,
                     stockId
                 }

@@ -3,7 +3,6 @@ import express, { Request, Response } from "express";
 import cors from "cors";
 import prisma from "./lib/prisma.js";
 import userRouter from "./Router/userRouter.js";
-import { WebSocketServer } from "ws";
 import { orderRouter } from "./Router/orderRouter.js";
 import redis from "./redis/client.js";
 import findRouter from "./Router/findRouter.js";
@@ -41,9 +40,10 @@ import { runStartupReconciliation } from "./workers/reconciliationWorker.js";
 
 const PORT = process.env.PORT || 3000;
 
-await redis.connect().then(() => {
+if (!redis.isOpen) {
+    await redis.connect();
     console.log("connected on redis");
-});
+}
 await startWebSocketServer();
 
 // Run startup reconciliation before starting live streams

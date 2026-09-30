@@ -1,17 +1,18 @@
 import { createClient } from "redis";
-import express from "express";
-const app = express();
-app.use(express.json());
+export const redisConnection = process.env.REDIS_URL
+    ? { url: process.env.REDIS_URL }
+    : {
+        host: process.env.REDIS_HOST || "127.0.0.1",
+        port: Number(process.env.REDIS_PORT) || 6379,
+    };
 const redis = createClient({
-    url: process.env.REDIS_URL
+    url: process.env.REDIS_URL || "redis://localhost:6379",
 });
 redis.on("error", (error) => {
-    console.log(error);
+    console.log("Redis Client Error:", error);
 });
 export async function setPrice(instrumentKey, price) {
     await redis.set(instrumentKey, price);
-    console.log(`Set key=${instrumentKey}, val=${price}`);
-    // await redis.expire(instrumentKey,60);
 }
 export default redis;
 //# sourceMappingURL=client.js.map

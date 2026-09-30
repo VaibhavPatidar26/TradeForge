@@ -62,8 +62,10 @@ async function sellLimitOrder(req: Request, res: Response) {
         });
 
         const currentQty = holding ? Number(holding.quantity) : 0;
-        const isShortSell = currentQty < qty;
-        const requiredMargin = limitPrice * qty;
+        const longExitQty = currentQty > 0 ? Math.min(currentQty, qty) : 0;
+        const excessShortQty = qty - longExitQty;
+        const isShortSell = excessShortQty > 0;
+        const requiredMargin = excessShortQty * limitPrice;
 
         // 4️⃣  Get current market price from Redis
         const redisPrice = await redis.get(stock.instrument_key);
@@ -73,7 +75,7 @@ async function sellLimitOrder(req: Request, res: Response) {
         const currentMarketPrice = Number(redisPrice);
 
         const result = await prisma.$transaction(async (tx) => {
-            // Verify margin if short selling
+            // Verify margin if short selling excess portion
             if (isShortSell) {
                 const user = await tx.user.findUnique({ where: { id: userId } });
                 if (!user || Number(user.balance) < requiredMargin) {
@@ -91,42 +93,53 @@ async function sellLimitOrder(req: Request, res: Response) {
             if (currentMarketPrice >= limitPrice) {
                 const proceeds = currentMarketPrice * qty;
 
-                if (!isShortSell) {
-                    // Long Exit: credit proceeds and reduce holding
+                // Handle Long portion exit (if any)
+                if (longExitQty > 0) {
                     const freshHolding = await tx.holding.findUnique({
                         where: { userId_stockId: { userId, stockId } }
                     });
 
-                    if (!freshHolding || Number(freshHolding.quantity) < qty) {
+                    if (!freshHolding || Number(freshHolding.quantity) < longExitQty) {
                         throw new Error("Insufficient shares (race condition)");
                     }
+
+                    const exitProceeds = longExitQty * currentMarketPrice;
+                    await tx.user.update({
+                        where: { id: userId },
+                        data: { balance: { increment: exitProceeds } }
+                    });
 
                     const newQty = Number(freshHolding.quantity) - qty;
                     if (newQty === 0) {
                         await tx.holding.delete({ where: { id: freshHolding.id } });
+                    } else if (newQty < 0) {
+                        await tx.holding.update({
+                            where: { id: freshHolding.id },
+                            data: { quantity: newQty, avgPrice: currentMarketPrice }
+                        });
                     } else {
                         await tx.holding.update({
                             where: { id: freshHolding.id },
                             data: { quantity: newQty }
                         });
                     }
-
-                    await tx.user.update({
-                        where: { id: userId },
-                        data: { balance: { increment: proceeds } }
-                    });
                 } else {
-                    // Short Sell Entry immediate execution: set negative holding
+                    // 100% Short Sell Entry immediate execution
                     const freshHolding = await tx.holding.findUnique({
                         where: { userId_stockId: { userId, stockId } }
                     });
 
                     if (freshHolding) {
+                        const oldAbs = Math.abs(Number(freshHolding.quantity));
+                        const oldAvg = Number(freshHolding.avgPrice);
+                        const newAbs = oldAbs + qty;
+                        const newAvg = (oldAbs * oldAvg + qty * currentMarketPrice) / newAbs;
+
                         await tx.holding.update({
                             where: { id: freshHolding.id },
                             data: {
-                                quantity: { decrement: qty },
-                                avgPrice: currentMarketPrice
+                                quantity: -newAbs,
+                                avgPrice: newAvg
                             }
                         });
                     } else {

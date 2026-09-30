@@ -29,19 +29,23 @@ export async function cancelOrder(req, res) {
                 }
             });
             let refundAmount = 0;
-            //If BUY limit order, refund the locked amn limitPrice * quantity
+            // 1. If BUY limit order, refund the locked limitPrice * quantity
             if (order.side === "BUY" && order.limitPrice) {
                 refundAmount = Number(order.limitPrice) * Number(order.quantity);
-                if (refundAmount > 0) {
-                    await tx.user.update({
-                        where: { id: userId },
-                        data: {
-                            balance: {
-                                increment: refundAmount
-                            }
+            }
+            // 2. If Short SELL limit order with locked margin (recorded in order.total), refund that margin
+            else if (order.side === "SELL" && order.total && Number(order.total) > 0) {
+                refundAmount = Number(order.total);
+            }
+            if (refundAmount > 0) {
+                await tx.user.update({
+                    where: { id: userId },
+                    data: {
+                        balance: {
+                            increment: refundAmount
                         }
-                    });
-                }
+                    }
+                });
             }
             return { updatedOrder, refundAmount };
         });

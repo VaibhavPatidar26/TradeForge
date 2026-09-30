@@ -26,6 +26,8 @@ interface PortfolioStore {
     setHoldings: (holdings: Holding[]) => void;
 }
 
+const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || "http://localhost:3000/";
+
 const usePortfolioStore = create<PortfolioStore>(function (set) {
     return {
         holdings: [],
@@ -40,7 +42,7 @@ const usePortfolioStore = create<PortfolioStore>(function (set) {
 
             try {
                 const response: any = await axios.get(
-                    "http://localhost:3000/api/search/fetchportfolio",
+                    `${BACKEND_URL}api/search/fetchportfolio`,
                     {
                         headers: {
                             Authorization: `Bearer ${token}`

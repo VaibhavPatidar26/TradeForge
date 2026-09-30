@@ -5,6 +5,7 @@ import { useOrdersStore } from "../../store/ordersStore";
 import { useAuthStore } from "../../store/authStore";
 import { useUserStore } from "../../store/userStore";
 import selling from "../../api/selling";
+import buying from "../../api/buying";
 
 const MIN_HEIGHT = 80;
 const DEFAULT_HEIGHT = 140;
@@ -52,11 +53,17 @@ export default function PositionsPanel() {
         }
     }
 
-    async function handleExit(stockId: string, quantity: number) {
+    async function handleExit(stockId: string, quantity: number, isShort: boolean) {
         if (!token || quantity <= 0) return;
         setExitingStockId(stockId);
         try {
-            await selling(token, stockId, quantity);
+            if (isShort) {
+                // To exit/square-off a SHORT position, we BUY back the shares
+                await buying(token, stockId, quantity);
+            } else {
+                // To exit a LONG position, we SELL the shares
+                await selling(token, stockId, quantity);
+            }
             await Promise.all([
                 fetchPortfolio(token),
                 fetchTodayOrders(token),
@@ -191,7 +198,7 @@ function PositionsTable({
 }: {
     holdings: any[];
     prices: Record<string, number>;
-    onExit: (stockId: string, quantity: number) => void;
+    onExit: (stockId: string, quantity: number, isShort: boolean) => void;
     exitingStockId: string | null;
 }) {
     const [quantities, setQuantities] = useState<Record<string, number>>({});
@@ -214,24 +221,35 @@ function PositionsTable({
             <thead>
                 <tr className="text-gray-600 border-b border-[#1f242b]">
                     <th className="text-left px-3 py-1.5 font-medium">Symbol</th>
+                    <th className="text-left px-3 py-1.5 font-medium">Type</th>
                     <th className="text-right px-3 py-1.5 font-medium">Qty</th>
-                    <th className="text-right px-3 py-1.5 font-medium">Avg</th>
+                    <th className="text-right px-3 py-1.5 font-medium">Avg Price</th>
                     <th className="text-right px-3 py-1.5 font-medium">LTP</th>
                     <th className="text-right px-3 py-1.5 font-medium">P&L</th>
                     <th className="text-right px-3 py-1.5 font-medium">P&L %</th>
-                    <th className="text-right px-3 py-1.5 font-medium">Exit Position</th>
+                    <th className="text-right px-3 py-1.5 font-medium">Square Off / Exit</th>
                 </tr>
             </thead>
             <tbody>
                 {holdings.map(function (h) {
+                    const rawQty   = Number(h.quantity);
+                    const isShort  = rawQty < 0;
+                    const absQty   = Math.abs(rawQty);
                     const ltp      = prices[h.stockId] ?? prices[h.stock?.instrument_key] ?? null;
                     const avg      = Number(h.avgPrice);
-                    const qty      = Number(h.quantity);
-                    const pnl      = ltp != null ? (ltp - avg) * qty : null;
-                    const pnlPct   = ltp != null ? ((ltp - avg) / avg) * 100 : null;
+
+                    // PnL:
+                    // Long:  (ltp - avg) * absQty
+                    // Short: (avg - ltp) * absQty
+                    const pnl      = ltp != null
+                        ? (isShort ? (avg - ltp) * absQty : (ltp - avg) * absQty)
+                        : null;
+                    const pnlPct   = ltp != null && avg > 0
+                        ? (isShort ? ((avg - ltp) / avg) * 100 : ((ltp - avg) / avg) * 100)
+                        : null;
                     const positive = pnl != null && pnl >= 0;
 
-                    const currentExitQty = Math.min(quantities[h.id] ?? qty, qty);
+                    const currentExitQty = Math.min(quantities[h.id] ?? absQty, absQty);
                     const isExiting = exitingStockId === h.stockId;
 
                     return (
@@ -247,7 +265,16 @@ function PositionsTable({
                                     {h.stock?.exchange}
                                 </span>
                             </td>
-                            <td className="px-3 py-2 text-right text-gray-300 tabular-nums">{qty}</td>
+                            <td className="px-3 py-2">
+                                <span className={`px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider ${
+                                    isShort
+                                        ? "bg-red-500/15 text-red-400 border border-red-500/30"
+                                        : "bg-emerald-500/15 text-emerald-400 border border-emerald-500/30"
+                                }`}>
+                                    {isShort ? "SHORT" : "LONG"}
+                                </span>
+                            </td>
+                            <td className="px-3 py-2 text-right text-gray-300 tabular-nums font-medium">{absQty}</td>
                             <td className="px-3 py-2 text-right text-gray-400 tabular-nums">₹{fmt(avg)}</td>
                             <td className="px-3 py-2 text-right tabular-nums">
                                 {ltp != null ? (
@@ -275,7 +302,7 @@ function PositionsTable({
                                     <div className="flex items-center border border-[#2a2e39] bg-[#131722] rounded px-1 py-0.5">
                                         <button
                                             type="button"
-                                            onClick={() => updateQty(h.id, currentExitQty - 1, qty)}
+                                            onClick={() => updateQty(h.id, currentExitQty - 1, absQty)}
                                             disabled={currentExitQty <= 1 || isExiting}
                                             className="w-4 h-4 flex items-center justify-center text-gray-400 hover:text-white disabled:opacity-30 cursor-pointer text-xs select-none"
                                         >
@@ -284,30 +311,30 @@ function PositionsTable({
                                         <input
                                             type="number"
                                             min="1"
-                                            max={qty}
+                                            max={absQty}
                                             value={currentExitQty}
                                             onChange={(e) => {
                                                 const v = Number(e.target.value);
-                                                if (!isNaN(v)) updateQty(h.id, v, qty);
+                                                if (!isNaN(v)) updateQty(h.id, v, absQty);
                                             }}
                                             disabled={isExiting}
                                             className="w-10 text-center bg-transparent text-gray-200 text-xs focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                                         />
                                         <button
                                             type="button"
-                                            onClick={() => updateQty(h.id, currentExitQty + 1, qty)}
-                                            disabled={currentExitQty >= qty || isExiting}
+                                            onClick={() => updateQty(h.id, currentExitQty + 1, absQty)}
+                                            disabled={currentExitQty >= absQty || isExiting}
                                             className="w-4 h-4 flex items-center justify-center text-gray-400 hover:text-white disabled:opacity-30 cursor-pointer text-xs select-none"
                                         >
                                             +
                                         </button>
                                     </div>
                                     <button
-                                        onClick={() => onExit(h.stockId, currentExitQty)}
+                                        onClick={() => onExit(h.stockId, currentExitQty, isShort)}
                                         disabled={isExiting || currentExitQty <= 0}
-                                        className="text-[11px] text-red-400 hover:text-red-300 disabled:opacity-50 px-2 py-0.5 rounded border border-red-900/40 hover:border-red-700 bg-red-950/20 cursor-pointer transition-colors"
+                                        className="text-[11px] text-red-400 hover:text-red-300 disabled:opacity-50 px-2.5 py-1 rounded border border-red-900/40 hover:border-red-700 bg-red-950/20 cursor-pointer transition-colors font-medium"
                                     >
-                                        {isExiting ? "Exiting..." : "Exit"}
+                                        {isExiting ? "Exiting..." : isShort ? "Cover" : "Exit"}
                                     </button>
                                 </div>
                             </td>
