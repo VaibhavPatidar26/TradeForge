@@ -196,7 +196,7 @@ export default function VerifyOtp() {
 
                     {/* Form */}
                     <form onSubmit={handleVerify} className="space-y-6">
-                        <div className="flex justify-between items-center gap-2">
+                        <div className="flex justify-between items-center gap-1.5 sm:gap-2">
                             {otp.map((digit, index) => (
                                 <input
                                     key={index}
@@ -208,7 +208,7 @@ export default function VerifyOtp() {
                                     onChange={(e) => handleOtpChange(index, e.target.value)}
                                     onKeyDown={(e) => handleKeyDown(index, e)}
                                     onPaste={handlePaste}
-                                    className="h-12 w-12 sm:h-14 sm:w-14 text-center text-xl font-bold rounded-lg border border-zinc-800 bg-[#0c0c0c] text-white outline-none transition focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500/30"
+                                    className="h-11 w-11 sm:h-14 sm:w-14 text-center text-lg sm:text-xl font-bold rounded-lg border border-zinc-800 bg-[#0c0c0c] text-white outline-none transition focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500/30 flex-1 min-w-0"
                                 />
                             ))}
                         </div>

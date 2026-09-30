@@ -67,12 +67,15 @@ export default async function startWebSocketServer() {
                         }
                     });
 
-                    // Extract instrument keys
-                    const instrumentKeys = userWatchlist.map(function (item) {
+                    // Extract instrument keys + default market indices (Sensex & Nifty 50)
+                    const userKeys = userWatchlist.map(function (item) {
                         return item.stock.instrument_key;
                     });
-                    //subscribe to the instrument keys here
-                    subscribeToStocks(instrumentKeys || []);
+                    const defaultIndices = ["NSE_INDEX|Nifty 50", "BSE_INDEX|SENSEX", "NSE_INDEX|Nifty Bank"];
+                    const instrumentKeys = Array.from(new Set([...userKeys, ...defaultIndices]));
+
+                    // subscribe to instrument keys and indices
+                    subscribeToStocks(instrumentKeys);
                     // Store userId -> instrumentKeys
                     watchlists.set(
                         decoded.userId,
@@ -91,7 +94,7 @@ export default async function startWebSocketServer() {
                     }
 
                     console.log(
-                        "User watchlist:",
+                        "Subscribed instrument keys:",
                         instrumentKeys
                     );
 

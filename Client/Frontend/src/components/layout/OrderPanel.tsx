@@ -32,6 +32,12 @@ export default function OrderPanel() {
     if (token) fetchUser(token);
   }, [token, fetchUser]);
 
+  const isIndex = currentStock ? (
+    currentStock.segment === "INDEX" ||
+    currentStock.instrument_type === "INDEX" ||
+    currentStock.instrument_key?.includes("INDEX")
+  ) : false;
+
   const currentPrice  = currentStock ? livePrices[currentStock.instrument_key] : undefined;
   const currentHolding = holdings.find(
     (h) =>
@@ -51,7 +57,7 @@ export default function OrderPanel() {
   }
 
   async function handleBuy() {
-    if (!token || !currentStock || !qty || qty <= 0) return;
+    if (isIndex || !token || !currentStock || !qty || qty <= 0) return;
     if (orderMode === "LIMIT" && (!limitPrice || limitPrice <= 0)) {
       setStatusMessage({ type: "error", text: "Please enter a valid limit price" });
       return;
@@ -81,7 +87,7 @@ export default function OrderPanel() {
   }
 
   async function handleSell() {
-    if (!token || !currentStock || !qty || qty <= 0) return;
+    if (isIndex || !token || !currentStock || !qty || qty <= 0) return;
     if (orderMode === "LIMIT" && (!limitPrice || limitPrice <= 0)) {
       setStatusMessage({ type: "error", text: "Please enter a valid limit price" });
       return;
@@ -115,7 +121,7 @@ export default function OrderPanel() {
   }
 
   return (
-    <div className="w-[300px] h-full bg-[#0b0e14] border-l border-[#1f2937] flex flex-col">
+    <div className="w-full h-full bg-[#0b0e14] border-l border-[#1f2937] flex flex-col">
 
       {/* ── Mode toggle header ──────────────────────────────────────────── */}
       <div className="flex border-b border-[#1f2937] shrink-0">
@@ -196,64 +202,76 @@ export default function OrderPanel() {
           </div>
         )}
 
-        {/* ── Inputs ──────────────────────────────────────────────────── */}
-        <div className="flex flex-col gap-3">
-
-          {/* Quantity */}
-          <div>
-            <div className="flex items-center justify-between mb-1">
-              <label className="text-[11px] text-gray-400 font-medium uppercase tracking-wider">Quantity</label>
-              {holdingQty !== 0 && (
-                <button
-                  type="button"
-                  onClick={() => setQty(Math.abs(holdingQty))}
-                  className="text-[11px] text-emerald-400 hover:text-emerald-300 font-medium transition-colors"
-                >
-                  {holdingQty > 0 ? `Max (${holdingQty})` : `Cover All (${Math.abs(holdingQty)})`}
-                </button>
-              )}
-            </div>
-            <input
-              type="number"
-              min="1"
-              value={qty ?? ""}
-              onChange={(e) => setQty(e.target.value === "" ? undefined : Number(e.target.value))}
-              placeholder="0"
-              className="h-10 w-full bg-[#131722] text-white border border-[#2a2e39] rounded px-3 focus:outline-none focus:border-[#089981] placeholder-gray-600 transition-colors text-sm"
-            />
+        {/* Index Notice */}
+        {isIndex && (
+          <div className="rounded-lg border border-emerald-900/40 bg-emerald-950/20 p-3 text-xs text-emerald-300">
+            <p className="font-semibold">Market Index Selected</p>
+            <p className="text-[11px] text-gray-400 mt-1 leading-relaxed">
+              You are currently analyzing {currentStock?.name} on the interactive chart. To place Buy or Sell orders, select an individual stock.
+            </p>
           </div>
+        )}
 
-          {/* Limit Price — only shown in LIMIT mode */}
-          {orderMode === "LIMIT" && (
+        {/* ── Inputs ──────────────────────────────────────────────────── */}
+        {!isIndex && (
+          <div className="flex flex-col gap-3">
+
+            {/* Quantity */}
             <div>
-              <label className="text-[11px] text-gray-400 font-medium uppercase tracking-wider mb-1 block">
-                Limit Price (₹)
-              </label>
+              <div className="flex items-center justify-between mb-1">
+                <label className="text-[11px] text-gray-400 font-medium uppercase tracking-wider">Quantity</label>
+                {holdingQty !== 0 && (
+                  <button
+                    type="button"
+                    onClick={() => setQty(Math.abs(holdingQty))}
+                    className="text-[11px] text-emerald-400 hover:text-emerald-300 font-medium transition-colors"
+                  >
+                    {holdingQty > 0 ? `Max (${holdingQty})` : `Cover All (${Math.abs(holdingQty)})`}
+                  </button>
+                )}
+              </div>
               <input
                 type="number"
-                min="0.01"
-                step="0.05"
-                value={limitPrice ?? ""}
-                onChange={(e) => setLimitPrice(e.target.value === "" ? undefined : Number(e.target.value))}
-                placeholder={currentPrice != null ? fmt(currentPrice) : "0.00"}
-                className="h-10 w-full bg-[#131722] text-white border border-[#2a2e39] rounded px-3 focus:outline-none focus:border-blue-500 placeholder-gray-600 transition-colors text-sm"
+                min="1"
+                value={qty ?? ""}
+                onChange={(e) => setQty(e.target.value === "" ? undefined : Number(e.target.value))}
+                placeholder="0"
+                className="h-10 w-full bg-[#131722] text-white border border-[#2a2e39] rounded px-3 focus:outline-none focus:border-[#089981] placeholder-gray-600 transition-colors text-sm"
               />
-              {/* Helper hint */}
-              {currentPrice && limitPrice && (
-                <p className={`text-[10px] mt-1 ${
-                  limitPrice < currentPrice ? "text-emerald-400/70" : "text-blue-400/70"
-                }`}>
-                  {limitPrice < currentPrice
-                    ? `BUY will trigger below ₹${fmt(currentPrice)}`
-                    : `SELL will trigger above ₹${fmt(currentPrice)}`}
-                </p>
-              )}
             </div>
-          )}
-        </div>
+
+            {/* Limit Price — only shown in LIMIT mode */}
+            {orderMode === "LIMIT" && (
+              <div>
+                <label className="text-[11px] text-gray-400 font-medium uppercase tracking-wider mb-1 block">
+                  Limit Price (₹)
+                </label>
+                <input
+                  type="number"
+                  min="0.01"
+                  step="0.05"
+                  value={limitPrice ?? ""}
+                  onChange={(e) => setLimitPrice(e.target.value === "" ? undefined : Number(e.target.value))}
+                  placeholder={currentPrice != null ? fmt(currentPrice) : "0.00"}
+                  className="h-10 w-full bg-[#131722] text-white border border-[#2a2e39] rounded px-3 focus:outline-none focus:border-blue-500 placeholder-gray-600 transition-colors text-sm"
+                />
+                {/* Helper hint */}
+                {currentPrice && limitPrice && (
+                  <p className={`text-[10px] mt-1 ${
+                    limitPrice < currentPrice ? "text-emerald-400/70" : "text-blue-400/70"
+                  }`}>
+                    {limitPrice < currentPrice
+                      ? `BUY will trigger below ₹${fmt(currentPrice)}`
+                      : `SELL will trigger above ₹${fmt(currentPrice)}`}
+                  </p>
+                )}
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Estimated value */}
-        {estValue != null && (
+        {!isIndex && estValue != null && (
           <div className="rounded-lg bg-[#11161c] border border-[#1f2630] p-3 text-xs">
             <div className="flex items-center justify-between text-gray-400">
               <span>{orderMode === "LIMIT" ? "Est. Value @ limit:" : "Est. Value:"}</span>
@@ -283,14 +301,14 @@ export default function OrderPanel() {
       <div className="flex gap-3 p-4 shrink-0 border-t border-[#1f2937]">
         <button
           onClick={handleBuy}
-          disabled={!currentStock || !qty || qty <= 0 || loading || (orderMode === "LIMIT" && (!limitPrice || limitPrice <= 0))}
+          disabled={isIndex || !currentStock || !qty || qty <= 0 || loading || (orderMode === "LIMIT" && (!limitPrice || limitPrice <= 0))}
           className="flex-1 bg-[#089981] hover:bg-[#067a67] disabled:opacity-40 disabled:cursor-not-allowed text-white font-semibold py-2.5 rounded transition-colors text-sm"
         >
           {loading ? "…" : holdingQty < 0 ? "BUY (COVER)" : "BUY"}
         </button>
         <button
           onClick={handleSell}
-          disabled={!currentStock || !qty || qty <= 0 || loading || (orderMode === "LIMIT" && (!limitPrice || limitPrice <= 0))}
+          disabled={isIndex || !currentStock || !qty || qty <= 0 || loading || (orderMode === "LIMIT" && (!limitPrice || limitPrice <= 0))}
           className="flex-1 bg-[#f23645] hover:bg-[#c22b37] disabled:opacity-40 disabled:cursor-not-allowed text-white font-semibold py-2.5 rounded transition-colors text-sm"
         >
           {loading ? "…" : holdingQty <= 0 ? "SHORT SELL" : "SELL"}

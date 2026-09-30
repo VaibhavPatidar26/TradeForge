@@ -6,7 +6,7 @@ import StockCard from "../market/StockCard";
 import { Portfolio } from "./Portfolio";
 import { Orders } from "./Orders";
 
-export default function MainContent() {
+export default function MainContent({ onSelectStockMobile }: { onSelectStockMobile?: () => void }) {
     const { currentPanel } = usePanelStore();
     const token = useAuthStore((s) => s.token);
 
@@ -32,6 +32,7 @@ export default function MainContent() {
                                 onRemove={(stockId) => {
                                     if (token) removeFromWatchlist(stockId, token);
                                 }}
+                                onSelect={onSelectStockMobile}
                             />
                         ))
                     ) : (

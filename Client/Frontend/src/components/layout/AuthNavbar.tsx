@@ -1,8 +1,10 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import { Bell, Search, User, ChevronDown } from "lucide-react";
+import { Search, User, ChevronDown } from "lucide-react";
+import axios from "axios";
 import { useAuthStore } from "../../store/authStore";
 import { useUserStore } from "../../store/userStore";
+import FloatingWindow from "../ui/FloatingWindow";
 
 export default function AuthNavbar() {
     const logout = useAuthStore((state) => state.logout);
@@ -13,13 +15,78 @@ export default function AuthNavbar() {
     const clearUser = useUserStore((state) => state.clearUser);
 
     const [profileClicked, setProfileClicked] = useState(false);
+    const [searchStockName, setSearchStockName] = useState<string>("");
+    const [availableStocks, setAvailableStocks] = useState<Array<any>>([]);
+
+    const searchContainerRef = useRef<HTMLDivElement>(null);
+    const searchInputRef = useRef<HTMLInputElement>(null);
     const navigate = useNavigate();
+    const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
 
     useEffect(() => {
         if (token) {
             fetchUser(token);
         }
     }, [token, fetchUser]);
+
+    // Close search dropdown on click outside
+    useEffect(() => {
+        function handleClickOutside(event: MouseEvent) {
+            if (
+                searchContainerRef.current &&
+                !searchContainerRef.current.contains(event.target as Node)
+            ) {
+                setSearchStockName("");
+                setAvailableStocks([]);
+            }
+        }
+
+        document.addEventListener("mousedown", handleClickOutside);
+        return () => {
+            document.removeEventListener("mousedown", handleClickOutside);
+        };
+    }, []);
+
+    // Keyboard shortcut Ctrl+K / Cmd+K to focus search input
+    useEffect(() => {
+        function handleKeyDown(e: KeyboardEvent) {
+            if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k") {
+                e.preventDefault();
+                searchInputRef.current?.focus();
+            }
+        }
+        document.addEventListener("keydown", handleKeyDown);
+        return () => document.removeEventListener("keydown", handleKeyDown);
+    }, []);
+
+    // Debounced search API request
+    useEffect(() => {
+        if (searchStockName.trim() === "") {
+            setAvailableStocks([]);
+            return;
+        }
+
+        const timer = setTimeout(() => {
+            async function searchStock(name: string) {
+                try {
+                    const response = await axios.get(
+                        `${BACKEND_URL}api/search/searchStock?stockName=${name}`,
+                        {
+                            headers: {
+                                Authorization: `Bearer ${token}`,
+                            },
+                        }
+                    );
+                    setAvailableStocks(response.data.availableStocks || []);
+                } catch (error) {
+                    console.error("Top bar search failed:", error);
+                }
+            }
+            searchStock(searchStockName);
+        }, 300);
+
+        return () => clearTimeout(timer);
+    }, [searchStockName, token, BACKEND_URL]);
 
     function LogoutHandler() {
         clearUser();
@@ -45,33 +112,35 @@ export default function AuthNavbar() {
                     </span>
                 </Link>
 
-                {/* Search */}
-                <div className="group flex h-9 w-full max-w-[400px] items-center gap-2 rounded-md border border-zinc-800 bg-[#181818] px-3 transition-colors focus-within:border-zinc-600 focus-within:bg-[#1c1c1c] sm:mx-4">
+                {/* Search Bar */}
+                <div
+                    ref={searchContainerRef}
+                    className="relative group flex h-9 flex-1 min-w-0 max-w-[180px] sm:max-w-[400px] items-center gap-2 rounded-md border border-zinc-800 bg-[#181818] px-2.5 sm:px-3 transition-colors focus-within:border-zinc-600 focus-within:bg-[#1c1c1c] mx-1 sm:mx-4"
+                >
                     <Search
                         size={17}
                         className="shrink-0 text-zinc-500 transition-colors group-focus-within:text-zinc-300"
                     />
                     <input
+                        ref={searchInputRef}
                         type="text"
+                        value={searchStockName}
+                        onChange={(e) => setSearchStockName(e.target.value)}
                         placeholder="Search stocks..."
-                        className="w-full bg-transparent text-sm text-white outline-none placeholder:text-zinc-500"
+                        className="w-full bg-transparent text-xs sm:text-sm text-white outline-none placeholder:text-zinc-500 min-w-0"
                     />
                     <span className="hidden shrink-0 rounded border border-zinc-700/80 px-1.5 py-0.5 font-mono text-[10px] leading-none text-zinc-500 md:block">
                         Ctrl K
                     </span>
+
+                    {/* Floating Search Results Dropdown */}
+                    {availableStocks.length > 0 && (
+                        <FloatingWindow Stocks={availableStocks} />
+                    )}
                 </div>
 
                 {/* Right section */}
                 <div className="relative flex shrink-0 items-center gap-3 sm:gap-5">
-                    {/* Market Status */}
-                    <div className="hidden items-center gap-2 text-xs text-zinc-400 lg:flex">
-                        <span className="relative flex h-2 w-2">
-                            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-500 opacity-75" />
-                            <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-500" />
-                        </span>
-                        Market Open
-                    </div>
-
                     {/* Balance */}
                     <div className="hidden text-sm xl:block">
                         <span className="mr-2 text-zinc-500">Balance</span>
@@ -79,16 +148,6 @@ export default function AuthNavbar() {
                             {balance != null ? `₹${fmt(balance)}` : "—"}
                         </span>
                     </div>
-
-                    {/* Notifications */}
-                    <button
-                        type="button"
-                        aria-label="Notifications"
-                        className="relative rounded-md text-zinc-400 transition-colors hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/60 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0f0f0f]"
-                    >
-                        <Bell size={19} />
-                        <span className="absolute -right-0.5 -top-0.5 h-2 w-2 rounded-full bg-emerald-500 ring-2 ring-[#0f0f0f]" />
-                    </button>
 
                     {/* Profile */}
                     <button

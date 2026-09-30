@@ -45,12 +45,14 @@ export default async function startWebSocketServer() {
                             stock: true
                         }
                     });
-                    // Extract instrument keys
-                    const instrumentKeys = userWatchlist.map(function (item) {
+                    // Extract instrument keys + default market indices (Sensex & Nifty 50)
+                    const userKeys = userWatchlist.map(function (item) {
                         return item.stock.instrument_key;
                     });
-                    //subscribe to the instrument keys here
-                    subscribeToStocks(instrumentKeys || []);
+                    const defaultIndices = ["NSE_INDEX|Nifty 50", "BSE_INDEX|SENSEX", "NSE_INDEX|Nifty Bank"];
+                    const instrumentKeys = Array.from(new Set([...userKeys, ...defaultIndices]));
+                    // subscribe to instrument keys and indices
+                    subscribeToStocks(instrumentKeys);
                     // Store userId -> instrumentKeys
                     watchlists.set(decoded.userId, instrumentKeys);
                     for (const stockKey of instrumentKeys) {
@@ -64,7 +66,7 @@ export default async function startWebSocketServer() {
                             console.log(`Pushed cached price for ${stockKey}: ₹${cachedPrice}`);
                         }
                     }
-                    console.log("User watchlist:", instrumentKeys);
+                    console.log("Subscribed instrument keys:", instrumentKeys);
                 }
                 catch (error) {
                     console.log("Invalid token", error);

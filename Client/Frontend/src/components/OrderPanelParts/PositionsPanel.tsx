@@ -217,7 +217,7 @@ function PositionsTable({
     }
 
     return (
-        <table className="w-full text-xs">
+        <table className="w-full text-xs min-w-[650px]">
             <thead>
                 <tr className="text-gray-600 border-b border-[#1f242b]">
                     <th className="text-left px-3 py-1.5 font-medium">Symbol</th>
@@ -365,7 +365,7 @@ function PendingTable({
     }
 
     return (
-        <table className="w-full text-xs">
+        <table className="w-full text-xs min-w-[500px]">
             <thead>
                 <tr className="text-gray-600 border-b border-[#1f242b]">
                     <th className="text-left px-3 py-1.5 font-medium">Symbol</th>

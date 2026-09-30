@@ -15,10 +15,11 @@ type Props = {
     stock: Stock;
     onAdd?: (stockId: string) => void;
     onRemove?: (stockId: string) => void;
+    onSelect?: () => void;
     isWatchlistView?: boolean;
 };
 
-export default function StockCard({ stock, onAdd, onRemove, isWatchlistView = false }: Props) {
+export default function StockCard({ stock, onAdd, onRemove, onSelect, isWatchlistView = false }: Props) {
     // Subscribe directly to the watchlist array and prices for instant re-renders
 
     const setStock = useStockStore(function(state){
@@ -39,7 +40,7 @@ export default function StockCard({ stock, onAdd, onRemove, isWatchlistView = fa
     return (
         <div className="flex cursor-pointer items-center gap-3 border-b border-[#1a2028] px-3 py-2.5 transition-colors last:border-b-0 hover:bg-[#1a2028]" onClick={()=>{
             setStock(stock);
-           
+            if (onSelect) onSelect();
         }}>
             <div className="flex min-w-0 flex-1 flex-col">
                 <span className="truncate text-sm font-medium text-gray-200">
