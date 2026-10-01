@@ -10,7 +10,13 @@ services:
     ports:
       - "3306:3306"
     volumes:
-      - mysql_data:/var/lib/mysql   # Persists DB data on VM hard drive
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${DATABASE_PASSWORD}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
 
   redis:
     image: redis:7-alpine
@@ -18,6 +24,11 @@ services:
     restart: always
     ports:
       - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
 
   backend:
     build: .
@@ -41,8 +52,10 @@ services:
       TWELVE_DATA_API_KEY: ${TWELVE_DATA_API_KEY}
       UPSTOX_STOCK_FETCH_URL: ${UPSTOX_STOCK_FETCH_URL}
     depends_on:
-      - mysql
-      - redis
+      mysql:
+        condition: service_healthy   # Wait for MySQL to actually be ready
+      redis:
+        condition: service_healthy   # Wait for Redis to actually be ready
 
 volumes:
   mysql_data:
