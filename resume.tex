@@ -1,0 +1,199 @@
+%-----------------------------------------------------------------------------------------------------------------------------------------------%
+%	The MIT License (MIT)
+%
+%	Copyright (c) 2021 Jitin Nair
+%
+%	Permission is hereby granted, free of charge, to any person obtaining a copy
+%	of this software and associated documentation files (the "Software"), to deal
+%	in the Software without restriction, including without limitation the rights
+%	to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+%	copies of the Software, and to permit persons to whom the Software is
+%	furnished to do so, subject to the following conditions:
+%	
+%	THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+%	IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+%	FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+%	AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+%	LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+%	OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+%	THE SOFTWARE.
+%	
+%-----------------------------------------------------------------------------------------------------------------------------------------------%
+
+%----------------------------------------------------------------------------------------
+%	DOCUMENT DEFINITION
+%----------------------------------------------------------------------------------------
+
+\documentclass[a4paper,11pt]{article}
+\linespread{0.94}
+
+%----------------------------------------------------------------------------------------
+%	PACKAGES
+%----------------------------------------------------------------------------------------
+\usepackage{url}
+\usepackage{parskip}
+
+% other packages for formatting
+\RequirePackage{color}
+\RequirePackage{graphicx}
+\usepackage[usenames,dvipsnames]{xcolor}
+\usepackage[a4paper, top=0.38in, bottom=0.38in, left=0.5in, right=0.5in]{geometry}
+
+% tabularx environment
+\usepackage{tabularx}
+
+% for lists within experience section
+\usepackage{enumitem}
+
+% centered version of 'X' col. type
+\newcolumntype{C}{>{\centering\arraybackslash}X}
+
+% to prevent spillover of tabular into next pages
+\usepackage{supertabular}
+\newlength{\fullcollw}
+\setlength{\fullcollw}{0.47\textwidth}
+
+% custom \section
+\usepackage{titlesec}
+\usepackage{multicol}
+\usepackage{multirow}
+
+\titleformat{\section}{\large\bfseries\scshape\raggedright}{}{0em}{}[\titlerule]
+\titlespacing{\section}{0pt}{2.5pt}{1.5pt}
+
+% Setup hyperref package, and colours for links
+\usepackage[unicode, draft=false]{hyperref}
+\definecolor{linkcolour}{rgb}{0,0.2,0.6}
+\hypersetup{colorlinks,breaklinks,urlcolor=linkcolour,linkcolor=linkcolour}
+
+% for social icons
+\usepackage{fontawesome5}
+
+%----------------------------------------------------------------------------------------
+%	BEGIN DOCUMENT
+%----------------------------------------------------------------------------------------
+\begin{document}
+
+% non-numbered pages
+\pagestyle{empty}
+
+%----------------------------------------------------------------------------------------
+%	TITLE / HEADER
+%----------------------------------------------------------------------------------------
+
+\begin{tabularx}{\linewidth}{@{} C @{}}
+\Huge{\textbf{Vaibhav Patidar}} \\[2pt]
+{\small
+\href{https://github.com/VaibhavPatidar26}{\raisebox{-0.05\height}\faGithub\ Github}
+\ $|$\ 
+\href{https://linkedin.com/in/vaibhav-patidar-227338297}{\raisebox{-0.05\height}\faLinkedin\ LinkedIn}
+\ $|$\ 
+\href{https://portfolio-five-gamma-su3klqtnsx.vercel.app/}{\raisebox{-0.05\height}\faGlobe\ Portfolio}
+\ $|$\ 
+\href{mailto:vaibhavpatidar22012005@gmail.com}{\raisebox{-0.05\height}\faEnvelope\ vaibhavpatidar22012005@gmail.com}
+\ $|$\ 
+\href{tel:+917974357592}{\raisebox{-0.05\height}\faMobile*\ +91 7974357592}
+}
+\end{tabularx}
+
+%----------------------------------------------------------------------------------------
+%	EDUCATION
+%----------------------------------------------------------------------------------------
+\section{Education}
+
+\begin{itemize}[leftmargin=1.15em, itemsep=0.5pt, topsep=0.5pt, parsep=0pt, partopsep=0pt]
+	\item \textbf{B.Tech in Computer Science and Engineering} \hfill \textit{2023 -- 2027} \\
+	      University Institute of Technology, RGPV \hfill \textbf{CGPA:} 7.47
+\end{itemize}
+
+%----------------------------------------------------------------------------------------
+%	EXPERIENCE
+%----------------------------------------------------------------------------------------
+\section{Experience}
+
+\begin{tabularx}{\linewidth}{@{}l r@{}}
+\textbf{\href{https://turfbooking.in/}{TurfBooking.in} -- Frontend Development Intern}
+& \textit{Nov 2024 -- Dec 2024} \\[1pt]
+\multicolumn{2}{@{}X@{}}{
+\begin{itemize}[leftmargin=1.15em, itemsep=0.5pt, topsep=0.5pt, parsep=0pt, partopsep=0pt]
+	\item Contributed to frontend development using \textbf{React.js}, gaining practical experience with component-based architecture and reusable UI components.
+	\item Worked with React components, \textbf{props}, \textbf{state management}, and \textbf{API integration} to develop responsive user interfaces.
+	\item Gained hands-on experience with application deployment, including production builds, environment configuration, and hosting.
+\end{itemize}
+}
+\end{tabularx}
+
+%----------------------------------------------------------------------------------------
+%	SKILLS
+%----------------------------------------------------------------------------------------
+\section{Technical Skills}
+
+\begin{tabularx}{\linewidth}{@{}l X@{}}
+\textbf{Languages:}             & {C++, Java, JavaScript, TypeScript, Python}     \\
+\textbf{Frameworks/Libraries:}  & {Node.js, React.js, Express.js, Prisma ORM, BullMQ, WebSockets, WebRTC}     \\
+\textbf{Database:}              & {MySQL, MongoDB, Redis}                    \\
+\textbf{Cloud:}                 & {AWS EC2, Render, Cloudinary, Vercel}        \\
+\textbf{Tools:}                 & {Docker, Nginx, VS Code, IntelliJ IDEA, Postman, Figma} \\
+\textbf{Version Control:}       & {Git, GitHub}
+\end{tabularx}
+
+%----------------------------------------------------------------------------------------
+%	PROJECTS
+%----------------------------------------------------------------------------------------
+\section{Projects}
+
+\noindent\textbf{TradeForge: Real-Time Paper Trading Platform}
+\hfill \href{https://trade-forge-kappa.vercel.app/}{Link to Demo}
+
+\begin{itemize}[leftmargin=1.15em, itemsep=0.5pt, topsep=0.5pt, parsep=0pt, partopsep=0pt]
+    \item Developed a full-stack paper trading platform using \textbf{TypeScript}, \textbf{Node.js}, \textbf{Express.js}, \textbf{MySQL}, \textbf{Redis}, and \textbf{React}, supporting real-time market data and stock order execution.
+    \item Implemented asynchronous order execution using \textbf{BullMQ}, processing \textbf{Market}, \textbf{Limit}, and \textbf{GTT} orders through background workers decoupled from the main HTTP request cycle.
+    \item Built real-time stock price pipeline using \textbf{Redis Pub/Sub} and \textbf{WebSockets} for low-latency tick-level updates broadcast to connected clients.
+    \item Implemented \textbf{idempotent} order processing and \textbf{transactional} balance and holding updates to prevent duplicate transactions and maintain data consistency.
+    \item Containerised the entire backend stack (\textbf{Node.js}, \textbf{MySQL}, \textbf{Redis}) using \textbf{Docker} and \textbf{Docker Compose}, and deployed on an \textbf{AWS EC2} instance with \textbf{Nginx} as a reverse proxy.
+\end{itemize}
+
+\vspace{2pt}
+\noindent\textbf{WeChat: Real Time Chat Application}
+\hfill \href{https://github.com/VaibhavPatidar26/ChatApp}{Github Repo}
+
+\begin{itemize}[leftmargin=1.15em, itemsep=0.5pt, topsep=0.5pt, parsep=0pt, partopsep=0pt]
+    \item Developed a full-stack real-time chat application using the \textbf{MERN} stack with user authentication and responsive messaging.
+    \item Built one-to-one and group chat functionality with real-time message delivery using \textbf{WebSockets}.
+    \item Implemented voice and video calling using \textbf{WebRTC}, enabling real-time peer-to-peer communication.
+    \item Structured the \textbf{Node.js} and \textbf{Express.js} backend with \textbf{MongoDB} for persistent storage and \textbf{Redis} for caching frequently accessed chat data.
+    \item Secured APIs using \textbf{JWT} authentication and protected routes.
+\end{itemize}
+
+\vspace{2pt}
+\noindent\textbf{Imagify: AI Powered Image SaaS}
+\hfill \href{https://imagify-five-bice.vercel.app/}{Link to Demo}
+
+\begin{itemize}[leftmargin=1.15em, itemsep=0.5pt, topsep=0.5pt, parsep=0pt, partopsep=0pt]
+    \item Developed a \textbf{MERN} stack SaaS application integrating third-party APIs for image generation, background removal, and image enhancement.
+    \item Integrated \textbf{Cloudinary} for image storage and management and \textbf{Razorpay} Payment Gateway for credit purchases and payment processing.
+    \item Designed \textbf{JWT}-based authentication, credit-based usage control, and image history tracking for personalized user workflows.
+    \item Built a responsive frontend using \textbf{React} and \textbf{Tailwind CSS} with \textbf{Framer Motion} for interactive UI animations.
+\end{itemize}
+
+\vspace{4pt}
+%----------------------------------------------------------------------------------------
+%	CERTIFICATIONS
+%----------------------------------------------------------------------------------------
+\section{Certifications}
+
+\begin{itemize}[leftmargin=1.15em, itemsep=0.5pt, topsep=0.5pt, parsep=0pt, partopsep=0pt]
+	\item \textbf{MERN Stack Web Development} \textendash\ \textit{Udemy} \hfill \textbf{Focus:} JavaScript, React.js, Node.js, Express.js, MongoDB
+	\item \textbf{SQL and Database Fundamentals} \textendash\ \textit{Oracle} \hfill \textbf{Focus:} SQL, RDBMS, Database Design, Relational vs. Non-Relational
+\end{itemize}
+
+%----------------------------------------------------------------------------------------
+%	ACHIEVEMENTS
+%----------------------------------------------------------------------------------------
+\section{Achievements}
+
+\begin{itemize}[leftmargin=1.15em, itemsep=0pt, topsep=0.5pt, parsep=0pt, partopsep=0pt]
+	\item Solved 350+ DSA problems across \textbf{LeetCode}, \textbf{CodeChef}, and \textbf{GeeksforGeeks}.
+\end{itemize}
+
+\end{document}
