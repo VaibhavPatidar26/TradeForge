@@ -1,9 +1,10 @@
 
 import { useAuthStore } from "../../store/authStore";
 import usePortfolioStore from "../../store/portFolioStore";
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
 import { usePriceStore } from "../../store/priceStore";
 import { useStockStore } from "../../store/stockStore";
+import { useOrdersStore } from "../../store/ordersStore";
 
 export function Portfolio() {
 
@@ -27,6 +28,8 @@ export function Portfolio() {
         return state.fetchPortfolio;
     });
 
+    const orders = useOrdersStore((s) => s.orders);
+
     useEffect(function () {
         async function fetchHoldings(): Promise<void> {
             if (!token) return;
@@ -34,6 +37,23 @@ export function Portfolio() {
         }
         fetchHoldings();
     }, [token, fetchPortfolio]);
+
+    // ── Reactive portfolio refresh ────────────────────────────────────────────
+    // Re-sync holdings whenever a new order transitions to COMPLETED so this
+    // sidebar updates without a page refresh.
+    const completedOrderKey = useMemo(() =>
+        orders
+            .filter((o) => o.status === "COMPLETED")
+            .map((o) => o.id)
+            .join(","),
+        [orders]
+    );
+
+    useEffect(() => {
+        if (token && completedOrderKey) {
+            fetchPortfolio(token);
+        }
+    }, [completedOrderKey, token, fetchPortfolio]);
 
     const livePrice: Record<string, number> = usePriceStore(function (state) {
         return state.prices;

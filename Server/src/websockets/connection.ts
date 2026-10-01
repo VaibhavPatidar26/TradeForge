@@ -14,7 +14,7 @@ const watchlists = new Map<string, string[]>();
 
 const JWT_SECRET = process.env.JWT_SECRET || "";
 
-export default async function startWebSocketServer() {
+export default async function startWebSocketServer(httpServer : any) {
 
 
     const wss = new WebSocketServer({

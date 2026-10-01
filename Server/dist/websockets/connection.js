@@ -8,7 +8,7 @@ import fetchHistChart from "../services/HIstoricalChart.js";
 const mp = new Map();
 const watchlists = new Map();
 const JWT_SECRET = process.env.JWT_SECRET || "";
-export default async function startWebSocketServer() {
+export default async function startWebSocketServer(httpServer) {
     const wss = new WebSocketServer({
         port: 8080
     }, () => {

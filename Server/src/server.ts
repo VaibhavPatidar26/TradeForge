@@ -9,8 +9,9 @@ import findRouter from "./Router/findRouter.js";
 import createRouter from "./Router/createRouter.js";
 import startWebSocketServer from "./websockets/connection.js";
 import { Upstoxconnect } from "./Market/indian_market.js";
+import http from "http"
 const app = express();
-
+const server = http.createServer(app)
 app.use(cors());
 app.use(express.json());
 
@@ -41,10 +42,10 @@ if (!redis.isOpen) {
     await redis.connect();
     console.log("connected on redis");
 }
-await startWebSocketServer();
+await startWebSocketServer(server);
 await Upstoxconnect();
 
-app.listen(PORT, () => {
+server.listen(PORT, () => {
     console.log(`server start on ${PORT}`);
 });
 

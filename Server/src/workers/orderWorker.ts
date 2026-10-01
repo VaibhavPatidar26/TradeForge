@@ -247,7 +247,7 @@ export const orderWorker = new Worker<Order>(
     }
 );
 
-orderWorker.on("failed", (job, err) => {
+orderWorker.on("failed", (job: Job<Order> | undefined, err: Error) => {
     console.error(`[OrderWorker] Job ${job?.id} failed:`, err);
 });
 

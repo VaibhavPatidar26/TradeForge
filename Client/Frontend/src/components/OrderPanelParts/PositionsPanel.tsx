@@ -41,6 +41,24 @@ export default function PositionsPanel() {
         }
     }, [token, fetchPortfolio, fetchTodayOrders, fetchUser]);
 
+    // ── Reactive portfolio refresh ────────────────────────────────────────────
+    // Whenever any limit order transitions to COMPLETED (either via WebSocket or
+    // by the next fetchTodayOrders poll), immediately re-sync holdings so the
+    // Positions tab shows the new position without a manual page refresh.
+    const completedOrderKey = useMemo(() =>
+        orders
+            .filter((o) => o.status === "COMPLETED")
+            .map((o) => o.id)
+            .join(","),
+        [orders]
+    );
+
+    useEffect(() => {
+        if (token && completedOrderKey) {
+            fetchPortfolio(token);
+        }
+    }, [completedOrderKey, token, fetchPortfolio]);
+
     async function handleCancel(orderId: string) {
         if (!token) return;
         setCancellingId(orderId);
