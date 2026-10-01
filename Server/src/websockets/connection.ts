@@ -18,9 +18,7 @@ export default async function startWebSocketServer(httpServer : any) {
 
 
     const wss = new WebSocketServer({
-        port: 8080
-    }, () => {
-        console.log("websocket server started at 8080",)
+     server:httpServer
     });
 
     wss.on("connection", function (ws) {
