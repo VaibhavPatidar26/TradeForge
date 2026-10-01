@@ -10,9 +10,7 @@ const watchlists = new Map();
 const JWT_SECRET = process.env.JWT_SECRET || "";
 export default async function startWebSocketServer(httpServer) {
     const wss = new WebSocketServer({
-        port: 8080
-    }, () => {
-        console.log("websocket server started at 8080");
+        server: httpServer
     });
     wss.on("connection", function (ws) {
         console.log("Client connected");
