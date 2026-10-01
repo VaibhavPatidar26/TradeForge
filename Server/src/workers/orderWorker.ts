@@ -2,6 +2,7 @@ import { Worker, Job } from "bullmq";
 import prisma from "../lib/prisma.js";
 import { type Order } from "../queues/orderQueue.js";
 import { redisConnection } from "../redis/client.js";
+import { broadcastExecution } from "../websockets/sendToFront.js";
 
 export const orderWorker = new Worker<Order>(
     "OrderExecutionQueue",
@@ -13,7 +14,7 @@ export const orderWorker = new Worker<Order>(
 
         if (!orderId) return;
 
-        await prisma.$transaction(async (tx) => {
+        const executedOrder = await prisma.$transaction(async (tx) => {
             // 1. IDEMPOTENCY CHECK: Fetch order and verify it is still OPEN
             const order = await tx.order.findUnique({
                 where: { id: orderId }
@@ -219,7 +220,26 @@ export const orderWorker = new Worker<Order>(
             });
 
             console.log(`[OrderWorker] ✅ Executed limit order: ${order.side} ${order.id} @ ₹${execPrice}`);
+
+            return {
+                userId: order.userId,
+                side: order.side as "BUY" | "SELL",
+                stockId: order.stockId,
+                quantity: orderQty,
+                price: execPrice,
+                orderId: order.id
+            };
         });
+
+        if (executedOrder) {
+            broadcastExecution(executedOrder.userId, {
+                side: executedOrder.side,
+                stockId: executedOrder.stockId,
+                quantity: executedOrder.quantity,
+                price: executedOrder.price,
+                orderId: executedOrder.orderId
+            });
+        }
     },
     {
         connection: redisConnection,

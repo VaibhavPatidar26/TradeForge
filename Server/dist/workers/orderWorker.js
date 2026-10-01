@@ -1,13 +1,14 @@
 import { Worker } from "bullmq";
 import prisma from "../lib/prisma.js";
 import { redisConnection } from "../redis/client.js";
+import { broadcastExecution } from "../websockets/sendToFront.js";
 export const orderWorker = new Worker("OrderExecutionQueue", async (job) => {
     const { id, price, limitprice, quantity } = job.data;
     const orderId = id;
     const execPrice = price || limitprice || 0;
     if (!orderId)
         return;
-    await prisma.$transaction(async (tx) => {
+    const executedOrder = await prisma.$transaction(async (tx) => {
         // 1. IDEMPOTENCY CHECK: Fetch order and verify it is still OPEN
         const order = await tx.order.findUnique({
             where: { id: orderId }
@@ -198,7 +199,24 @@ export const orderWorker = new Worker("OrderExecutionQueue", async (job) => {
             }
         });
         console.log(`[OrderWorker] ✅ Executed limit order: ${order.side} ${order.id} @ ₹${execPrice}`);
+        return {
+            userId: order.userId,
+            side: order.side,
+            stockId: order.stockId,
+            quantity: orderQty,
+            price: execPrice,
+            orderId: order.id
+        };
     });
+    if (executedOrder) {
+        broadcastExecution(executedOrder.userId, {
+            side: executedOrder.side,
+            stockId: executedOrder.stockId,
+            quantity: executedOrder.quantity,
+            price: executedOrder.price,
+            orderId: executedOrder.orderId
+        });
+    }
 }, {
     connection: redisConnection,
     concurrency: 25, // Up to 25 parallel executions without overloading DB pool
