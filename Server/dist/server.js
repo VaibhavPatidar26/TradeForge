@@ -9,6 +9,8 @@ import createRouter from "./Router/createRouter.js";
 import startWebSocketServer from "./websockets/connection.js";
 import { Upstoxconnect } from "./Market/indian_market.js";
 import http from "http";
+import "./workers/orderWorker.js"; // starts the BullMQ worker in the same process
+import { runStartupReconciliation } from "./workers/reconciliationWorker.js";
 const app = express();
 const server = http.createServer(app);
 app.use(cors());
@@ -36,6 +38,13 @@ const PORT = process.env.PORT || 3000;
 if (!redis.isOpen) {
     await redis.connect();
     console.log("connected on redis");
+}
+try {
+    await runStartupReconciliation();
+    console.log("[Worker] Startup reconciliation complete.");
+}
+catch (err) {
+    console.error("[Worker] Startup reconciliation error:", err);
 }
 await startWebSocketServer(server);
 await Upstoxconnect();
