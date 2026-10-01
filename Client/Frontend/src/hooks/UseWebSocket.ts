@@ -38,10 +38,13 @@ function useWebSocket() {
 
                     // ── Limit order executed by the worker ───────────────────
                     if (message.type === "LIMIT_ORDER_EXECUTED") {
+                        const currentToken = useAuthStore.getState().token;
                         useOrdersStore.getState().updateOrderStatus(message.orderId, "COMPLETED", message.price);
-                        usePortfolioStore.getState().fetchPortfolio(token!);
-                        useOrdersStore.getState().fetchTodayOrders(token!);
-                        useUserStore.getState().fetchUser(token!);
+                        if (currentToken) {
+                            usePortfolioStore.getState().fetchPortfolio(currentToken);
+                            useOrdersStore.getState().fetchTodayOrders(currentToken);
+                            useUserStore.getState().fetchUser(currentToken);
+                        }
                     }
 
                 } catch (_) {
