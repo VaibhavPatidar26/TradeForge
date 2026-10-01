@@ -3,3 +3,5 @@ dist
 .env
 .git
 npm-debug.log
+*.log
+src/generated
