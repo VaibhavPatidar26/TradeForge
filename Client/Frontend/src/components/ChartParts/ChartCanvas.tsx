@@ -3,6 +3,7 @@ import { createChart, CandlestickSeries } from "lightweight-charts";
 import type { LogicalRange, ISeriesApi } from "lightweight-charts";
 import type { Stock, TimeframeConfig, DrawingTool, Point, TrendlineData } from "./types";
 
+const SOKET_URL = import.meta.env.VITE_SOCKET_URL
 interface ChartCanvasProps {
     stock: Stock;
     chartUnit: string;
@@ -492,7 +493,7 @@ export function ChartCanvas({
         });
 
         // ── WebSocket Connection ───────────────────────────────────────────────
-        const ws = new WebSocket("ws://localhost:8080");
+        const ws = new WebSocket(SOKET_URL);
         wsRef.current = ws;
 
         ws.onopen = () => {
