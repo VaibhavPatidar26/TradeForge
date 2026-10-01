@@ -9,7 +9,8 @@
     "dev:worker": "tsx watch src/workerServer.ts",
     "build": "tsc",
     "start": "node dist/server.js",
-    "start:worker": "node dist/workerServer.js"
+    "start:worker": "node dist/workerServer.js",
+    "seed:stocks": "tsx src/services/fetchStocks.ts"
   },
   "keywords": [],
   "author": "",
