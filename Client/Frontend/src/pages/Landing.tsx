@@ -21,6 +21,7 @@ export default function Landing() {
             {/* Hero */}
             <main>
                 <section className="relative overflow-hidden">
+
                     {/* Background glow */}
                     <div className="pointer-events-none absolute left-1/2 top-0 h-[500px] w-[700px] -translate-x-1/2 rounded-full bg-emerald-500/10 blur-[140px]" />
 

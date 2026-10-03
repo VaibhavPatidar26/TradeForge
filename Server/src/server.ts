@@ -14,7 +14,9 @@ import "./workers/orderWorker.js"; // starts the BullMQ worker in the same proce
 import { runStartupReconciliation } from "./workers/reconciliationWorker.js";
 const app = express();
 const server = http.createServer(app)
+
 app.use(cors());
+
 app.use(express.json());
 
 app.get("/", async (req: Request, res: Response) => {
